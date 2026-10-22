@@ -1,0 +1,13 @@
+{
+  "$schema": "./manifest.schema.json",
+  "version": 1,
+  "description": "Maps stable Gemini exercise ids to locally bundled demo video files under /exercise-videos/.",
+  "referenceImage": "reference/body-motion-model-front.png",
+  "workflow": "Gemini exercise id → AI video generation → WebM upload → manifest entry → ExerciseDemoVideo",
+  "namingConvention": "Prefer <exercise-id>.webm (e.g. shoulder_abduction_001.webm). Do not use display names.",
+  "firstRecommendedExercise": {
+    "name": "Shoulder Abduction",
+    "reason": "Simple single-joint movement; easy to validate camera framing and loop quality before generating the full plan."
+  },
+  "videos": {}
+}

@@ -1,0 +1,1911 @@
+{
+  "Diaphragm": {
+    "bodyExplorerId": "diaphragm",
+    "bodyExplorerMeshNames": [
+      "diaphragm"
+    ],
+    "side": "MIDLINE",
+    "group": "TRUNK",
+    "fmaIds": [
+      "FMA13295"
+    ]
+  },
+  "Left Adductor Brevis": {
+    "bodyExplorerId": "left_adductor_brevis",
+    "bodyExplorerMeshNames": [
+      "left_adductor_brevis"
+    ],
+    "side": "LEFT",
+    "group": "UPPER_LEG",
+    "fmaIds": [
+      "FMA22454"
+    ]
+  },
+  "Left Adductor Longus": {
+    "bodyExplorerId": "left_adductor_longus",
+    "bodyExplorerMeshNames": [
+      "left_adductor_longus"
+    ],
+    "side": "LEFT",
+    "group": "UPPER_LEG",
+    "fmaIds": [
+      "FMA22457"
+    ]
+  },
+  "Left Adductor Magnus": {
+    "bodyExplorerId": "left_adductor_magnus",
+    "bodyExplorerMeshNames": [
+      "left_adductor_magnus"
+    ],
+    "side": "LEFT",
+    "group": "UPPER_LEG",
+    "fmaIds": [
+      "FMA22460"
+    ]
+  },
+  "Left Anconeus": {
+    "bodyExplorerId": "left_anconeus",
+    "bodyExplorerMeshNames": [
+      "left_anconeus"
+    ],
+    "side": "LEFT",
+    "group": "UPPER_ARM",
+    "fmaIds": [
+      "FMA37706"
+    ]
+  },
+  "Left Biceps Brachii": {
+    "bodyExplorerId": "",
+    "bodyExplorerMeshNames": [
+      "long_head_of_left_biceps_brachii",
+      "short_head_of_left_biceps_brachii"
+    ],
+    "side": "LEFT",
+    "group": "UPPER_ARM",
+    "fmaIds": [
+      "FMA37685",
+      "FMA37687"
+    ]
+  },
+  "Left Biceps Femoris": {
+    "bodyExplorerId": "",
+    "bodyExplorerMeshNames": [
+      "long_head_of_left_biceps_femoris",
+      "short_head_of_left_biceps_femoris"
+    ],
+    "side": "LEFT",
+    "group": "UPPER_LEG",
+    "fmaIds": [
+      "FMA45889",
+      "FMA45892"
+    ]
+  },
+  "Left Brachialis": {
+    "bodyExplorerId": "left_brachialis",
+    "bodyExplorerMeshNames": [
+      "left_brachialis"
+    ],
+    "side": "LEFT",
+    "group": "UPPER_ARM",
+    "fmaIds": [
+      "FMA37669"
+    ]
+  },
+  "Left Brachioradialis": {
+    "bodyExplorerId": "left_brachioradialis",
+    "bodyExplorerMeshNames": [
+      "left_brachioradialis"
+    ],
+    "side": "LEFT",
+    "group": "FOREARM",
+    "fmaIds": [
+      "FMA38487"
+    ]
+  },
+  "Left Coracobrachialis": {
+    "bodyExplorerId": "left_coracobrachialis",
+    "bodyExplorerMeshNames": [
+      "left_coracobrachialis"
+    ],
+    "side": "LEFT",
+    "group": "UPPER_ARM",
+    "fmaIds": [
+      "FMA37666"
+    ]
+  },
+  "Left Deltoid": {
+    "bodyExplorerId": "",
+    "bodyExplorerMeshNames": [
+      "acromial_part_of_left_deltoid",
+      "clavicular_part_of_left_deltoid",
+      "spinal_part_of_left_deltoid"
+    ],
+    "side": "LEFT",
+    "group": "SHOULDER",
+    "fmaIds": [
+      "FMA34681",
+      "FMA34683",
+      "FMA34685"
+    ]
+  },
+  "Left Extensor Carpi Radialis Brevis": {
+    "bodyExplorerId": "left_extensor_carpi_radialis_brevis",
+    "bodyExplorerMeshNames": [
+      "left_extensor_carpi_radialis_brevis"
+    ],
+    "side": "LEFT",
+    "group": "FOREARM",
+    "fmaIds": [
+      "FMA38499"
+    ]
+  },
+  "Left Extensor Carpi Radialis Longus": {
+    "bodyExplorerId": "left_extensor_carpi_radialis_longus",
+    "bodyExplorerMeshNames": [
+      "left_extensor_carpi_radialis_longus"
+    ],
+    "side": "LEFT",
+    "group": "FOREARM",
+    "fmaIds": [
+      "FMA38496"
+    ]
+  },
+  "Left Extensor Carpi Ulnaris": {
+    "bodyExplorerId": "",
+    "bodyExplorerMeshNames": [
+      "left_extensor_carpi_ulnaris",
+      "left_extensor_carpi_ulnaris_(2)"
+    ],
+    "side": "LEFT",
+    "group": "FOREARM",
+    "fmaIds": [
+      "FMA38508",
+      "FMA38508"
+    ]
+  },
+  "Left Extensor Digitorum Longus": {
+    "bodyExplorerId": "left_extensor_digitorum_longus",
+    "bodyExplorerMeshNames": [
+      "left_extensor_digitorum_longus"
+    ],
+    "side": "LEFT",
+    "group": "LOWER_LEG",
+    "fmaIds": [
+      "FMA22549"
+    ]
+  },
+  "Left External Oblique": {
+    "bodyExplorerId": "left_external_oblique",
+    "bodyExplorerMeshNames": [
+      "left_external_oblique"
+    ],
+    "side": "LEFT",
+    "group": "ABDOMEN",
+    "fmaIds": [
+      "FMA13337"
+    ]
+  },
+  "Left Fibularis Brevis": {
+    "bodyExplorerId": "left_fibularis_brevis",
+    "bodyExplorerMeshNames": [
+      "left_fibularis_brevis"
+    ],
+    "side": "LEFT",
+    "group": "LOWER_LEG",
+    "fmaIds": [
+      "FMA22555"
+    ]
+  },
+  "Left Fibularis Longus": {
+    "bodyExplorerId": "left_fibularis_longus",
+    "bodyExplorerMeshNames": [
+      "left_fibularis_longus"
+    ],
+    "side": "LEFT",
+    "group": "LOWER_LEG",
+    "fmaIds": [
+      "FMA22553"
+    ]
+  },
+  "Left Flexor Carpi Radialis": {
+    "bodyExplorerId": "left_flexor_carpi_radialis",
+    "bodyExplorerMeshNames": [
+      "left_flexor_carpi_radialis"
+    ],
+    "side": "LEFT",
+    "group": "FOREARM",
+    "fmaIds": [
+      "FMA38461"
+    ]
+  },
+  "Left Flexor Carpi Ulnaris": {
+    "bodyExplorerId": "",
+    "bodyExplorerMeshNames": [
+      "humeral_head_of_left_flexor_carpi_ulnaris",
+      "ulnar_head_of_left_flexor_carpi_ulnaris"
+    ],
+    "side": "LEFT",
+    "group": "FOREARM",
+    "fmaIds": [
+      "FMA38618",
+      "FMA38620"
+    ]
+  },
+  "Left Flexor Digitorum Longus": {
+    "bodyExplorerId": "left_flexor_digitorum_longus",
+    "bodyExplorerMeshNames": [
+      "left_flexor_digitorum_longus"
+    ],
+    "side": "LEFT",
+    "group": "LOWER_LEG",
+    "fmaIds": [
+      "FMA65017"
+    ]
+  },
+  "Left Flexor Hallucis Longus": {
+    "bodyExplorerId": "left_flexor_hallucis_longus",
+    "bodyExplorerMeshNames": [
+      "left_flexor_hallucis_longus"
+    ],
+    "side": "LEFT",
+    "group": "LOWER_LEG",
+    "fmaIds": [
+      "FMA65015"
+    ]
+  },
+  "Left Gastrocnemius": {
+    "bodyExplorerId": "",
+    "bodyExplorerMeshNames": [
+      "lateral_head_of_left_gastrocnemius",
+      "medial_head_of_left_gastrocnemius"
+    ],
+    "side": "LEFT",
+    "group": "LOWER_LEG",
+    "fmaIds": [
+      "FMA45958",
+      "FMA45961"
+    ]
+  },
+  "Left Gluteus Maximus": {
+    "bodyExplorerId": "left_gluteus_maximus",
+    "bodyExplorerMeshNames": [
+      "left_gluteus_maximus"
+    ],
+    "side": "LEFT",
+    "group": "HIP",
+    "fmaIds": [
+      "FMA22329"
+    ]
+  },
+  "Left Gluteus Medius": {
+    "bodyExplorerId": "left_gluteus_medius",
+    "bodyExplorerMeshNames": [
+      "left_gluteus_medius"
+    ],
+    "side": "LEFT",
+    "group": "HIP",
+    "fmaIds": [
+      "FMA22331"
+    ]
+  },
+  "Left Gluteus Minimus": {
+    "bodyExplorerId": "left_gluteus_minimus",
+    "bodyExplorerMeshNames": [
+      "left_gluteus_minimus"
+    ],
+    "side": "LEFT",
+    "group": "HIP",
+    "fmaIds": [
+      "FMA22333"
+    ]
+  },
+  "Left Gracilis": {
+    "bodyExplorerId": "left_gracilis",
+    "bodyExplorerMeshNames": [
+      "left_gracilis"
+    ],
+    "side": "LEFT",
+    "group": "UPPER_LEG",
+    "fmaIds": [
+      "FMA43884"
+    ]
+  },
+  "Left Iliacus": {
+    "bodyExplorerId": "left_iliacus",
+    "bodyExplorerMeshNames": [
+      "left_iliacus"
+    ],
+    "side": "LEFT",
+    "group": "HIP",
+    "fmaIds": [
+      "FMA22323"
+    ]
+  },
+  "Left Iliocostalis": {
+    "bodyExplorerId": "",
+    "bodyExplorerMeshNames": [
+      "left_iliocostalis_cervicis",
+      "left_iliocostalis_lumborum",
+      "left_iliocostalis_thoracis"
+    ],
+    "side": "LEFT",
+    "group": "BACK",
+    "fmaIds": [
+      "FMA22741",
+      "FMA22743",
+      "FMA22745"
+    ]
+  },
+  "Left Infraspinatus": {
+    "bodyExplorerId": "left_infraspinatus_muscle",
+    "bodyExplorerMeshNames": [
+      "left_infraspinatus_muscle"
+    ],
+    "side": "LEFT",
+    "group": "SHOULDER",
+    "fmaIds": [
+      "FMA32548"
+    ]
+  },
+  "Left Internal Oblique": {
+    "bodyExplorerId": "left_internal_oblique",
+    "bodyExplorerMeshNames": [
+      "left_internal_oblique"
+    ],
+    "side": "LEFT",
+    "group": "ABDOMEN",
+    "fmaIds": []
+  },
+  "Left Latissimus Dorsi": {
+    "bodyExplorerId": "left_latissimus_dorsi",
+    "bodyExplorerMeshNames": [
+      "left_latissimus_dorsi"
+    ],
+    "side": "LEFT",
+    "group": "BACK",
+    "fmaIds": []
+  },
+  "Left Levator Scapulae": {
+    "bodyExplorerId": "left_levator_scapulae",
+    "bodyExplorerMeshNames": [
+      "left_levator_scapulae"
+    ],
+    "side": "LEFT",
+    "group": "SHOULDER",
+    "fmaIds": [
+      "FMA32541"
+    ]
+  },
+  "Left Longissimus": {
+    "bodyExplorerId": "",
+    "bodyExplorerMeshNames": [
+      "left_longissimus_capitis",
+      "left_longissimus_cervicis",
+      "left_longissimus_thoracis"
+    ],
+    "side": "LEFT",
+    "group": "BACK",
+    "fmaIds": [
+      "FMA22753",
+      "FMA22756",
+      "FMA22758"
+    ]
+  },
+  "Left Masseter": {
+    "bodyExplorerId": "",
+    "bodyExplorerMeshNames": [
+      "left_deep_part_of_masseter",
+      "left_superficial_part_of_masseter"
+    ],
+    "side": "LEFT",
+    "group": "HEAD_NECK",
+    "fmaIds": []
+  },
+  "Left Multifidus": {
+    "bodyExplorerId": "",
+    "bodyExplorerMeshNames": [
+      "left_multifidus_cervicis",
+      "left_multifidus_lumborum",
+      "left_multifidus_thoracis"
+    ],
+    "side": "LEFT",
+    "group": "BACK",
+    "fmaIds": []
+  },
+  "Left Obturator Externus": {
+    "bodyExplorerId": "left_obturator_externus",
+    "bodyExplorerMeshNames": [
+      "left_obturator_externus"
+    ],
+    "side": "LEFT",
+    "group": "HIP",
+    "fmaIds": [
+      "FMA22327"
+    ]
+  },
+  "Left Obturator Internus": {
+    "bodyExplorerId": "left_obturator_internus",
+    "bodyExplorerMeshNames": [
+      "left_obturator_internus"
+    ],
+    "side": "LEFT",
+    "group": "HIP",
+    "fmaIds": [
+      "FMA22325"
+    ]
+  },
+  "Left Palmaris Longus": {
+    "bodyExplorerId": "left_palmaris_longus",
+    "bodyExplorerMeshNames": [
+      "left_palmaris_longus"
+    ],
+    "side": "LEFT",
+    "group": "FOREARM",
+    "fmaIds": [
+      "FMA38464"
+    ]
+  },
+  "Left Pectineus": {
+    "bodyExplorerId": "left_pectineus",
+    "bodyExplorerMeshNames": [
+      "left_pectineus"
+    ],
+    "side": "LEFT",
+    "group": "HIP",
+    "fmaIds": [
+      "FMA22451"
+    ]
+  },
+  "Left Pectoralis Major": {
+    "bodyExplorerId": "",
+    "bodyExplorerMeshNames": [
+      "abdominal_part_of_left_pectoralis_major",
+      "clavicular_part_of_left_pectoralis_major",
+      "sternocostal_part_of_left_pectoralis_major"
+    ],
+    "side": "LEFT",
+    "group": "CHEST",
+    "fmaIds": [
+      "FMA34691",
+      "FMA45875",
+      "FMA79980"
+    ]
+  },
+  "Left Pectoralis Minor": {
+    "bodyExplorerId": "left_pectoralis_minor",
+    "bodyExplorerMeshNames": [
+      "left_pectoralis_minor"
+    ],
+    "side": "LEFT",
+    "group": "CHEST",
+    "fmaIds": [
+      "FMA13376"
+    ]
+  },
+  "Left Piriformis": {
+    "bodyExplorerId": "left_piriformis",
+    "bodyExplorerMeshNames": [
+      "left_piriformis"
+    ],
+    "side": "LEFT",
+    "group": "HIP",
+    "fmaIds": [
+      "FMA22341"
+    ]
+  },
+  "Left Popliteus": {
+    "bodyExplorerId": "left_popliteus",
+    "bodyExplorerMeshNames": [
+      "left_popliteus"
+    ],
+    "side": "LEFT",
+    "group": "LOWER_LEG",
+    "fmaIds": [
+      "FMA22592"
+    ]
+  },
+  "Left Pronator Quadratus": {
+    "bodyExplorerId": "left_pronator_quadratus",
+    "bodyExplorerMeshNames": [
+      "left_pronator_quadratus"
+    ],
+    "side": "LEFT",
+    "group": "FOREARM",
+    "fmaIds": [
+      "FMA38455"
+    ]
+  },
+  "Left Pronator Teres": {
+    "bodyExplorerId": "",
+    "bodyExplorerMeshNames": [
+      "humeral_head_of_left_pronator_teres",
+      "ulnar_head_of_left_pronator_teres"
+    ],
+    "side": "LEFT",
+    "group": "FOREARM",
+    "fmaIds": [
+      "FMA38561",
+      "FMA38563"
+    ]
+  },
+  "Left Psoas Major": {
+    "bodyExplorerId": "left_psoas_major",
+    "bodyExplorerMeshNames": [
+      "left_psoas_major"
+    ],
+    "side": "LEFT",
+    "group": "HIP",
+    "fmaIds": [
+      "FMA22343"
+    ]
+  },
+  "Left Quadratus Femoris": {
+    "bodyExplorerId": "left_quadratus_femoris",
+    "bodyExplorerMeshNames": [
+      "left_quadratus_femoris"
+    ],
+    "side": "LEFT",
+    "group": "HIP",
+    "fmaIds": [
+      "FMA22339"
+    ]
+  },
+  "Left Quadratus Lumborum": {
+    "bodyExplorerId": "left_quadratus_lumborum",
+    "bodyExplorerMeshNames": [
+      "left_quadratus_lumborum"
+    ],
+    "side": "LEFT",
+    "group": "BACK",
+    "fmaIds": []
+  },
+  "Left Rectus Abdominis": {
+    "bodyExplorerId": "left_rectus_abdominis",
+    "bodyExplorerMeshNames": [
+      "left_rectus_abdominis"
+    ],
+    "side": "LEFT",
+    "group": "ABDOMEN",
+    "fmaIds": []
+  },
+  "Left Rectus Femoris": {
+    "bodyExplorerId": "left_rectus_femoris",
+    "bodyExplorerMeshNames": [
+      "left_rectus_femoris"
+    ],
+    "side": "LEFT",
+    "group": "UPPER_LEG",
+    "fmaIds": [
+      "FMA38929"
+    ]
+  },
+  "Left Rhomboid Major": {
+    "bodyExplorerId": "left_rhomboid_major",
+    "bodyExplorerMeshNames": [
+      "left_rhomboid_major"
+    ],
+    "side": "LEFT",
+    "group": "BACK",
+    "fmaIds": [
+      "FMA13382"
+    ]
+  },
+  "Left Rhomboid Minor": {
+    "bodyExplorerId": "left_rhomboid_minor",
+    "bodyExplorerMeshNames": [
+      "left_rhomboid_minor"
+    ],
+    "side": "LEFT",
+    "group": "BACK",
+    "fmaIds": [
+      "FMA13384"
+    ]
+  },
+  "Left Sartorius": {
+    "bodyExplorerId": "left_sartorius",
+    "bodyExplorerMeshNames": [
+      "left_sartorius"
+    ],
+    "side": "LEFT",
+    "group": "UPPER_LEG",
+    "fmaIds": [
+      "FMA22355"
+    ]
+  },
+  "Left Scalenus Anterior": {
+    "bodyExplorerId": "left_scalenus_anterior",
+    "bodyExplorerMeshNames": [
+      "left_scalenus_anterior"
+    ],
+    "side": "LEFT",
+    "group": "HEAD_NECK",
+    "fmaIds": [
+      "FMA13393"
+    ]
+  },
+  "Left Scalenus Medius": {
+    "bodyExplorerId": "left_scalenus_medius",
+    "bodyExplorerMeshNames": [
+      "left_scalenus_medius"
+    ],
+    "side": "LEFT",
+    "group": "HEAD_NECK",
+    "fmaIds": [
+      "FMA13391"
+    ]
+  },
+  "Left Scalenus Posterior": {
+    "bodyExplorerId": "left_scalenus_posterior",
+    "bodyExplorerMeshNames": [
+      "left_scalenus_posterior"
+    ],
+    "side": "LEFT",
+    "group": "HEAD_NECK",
+    "fmaIds": [
+      "FMA13389"
+    ]
+  },
+  "Left Semimembranosus": {
+    "bodyExplorerId": "left_semimembranosus",
+    "bodyExplorerMeshNames": [
+      "left_semimembranosus"
+    ],
+    "side": "LEFT",
+    "group": "UPPER_LEG",
+    "fmaIds": [
+      "FMA22449"
+    ]
+  },
+  "Left Semispinalis Capitis": {
+    "bodyExplorerId": "left_semispinalis_capitis",
+    "bodyExplorerMeshNames": [
+      "left_semispinalis_capitis"
+    ],
+    "side": "LEFT",
+    "group": "BACK",
+    "fmaIds": [
+      "FMA22877"
+    ]
+  },
+  "Left Semispinalis Cervicis": {
+    "bodyExplorerId": "left_semispinalis_cervicis",
+    "bodyExplorerMeshNames": [
+      "left_semispinalis_cervicis"
+    ],
+    "side": "LEFT",
+    "group": "BACK",
+    "fmaIds": [
+      "FMA22875"
+    ]
+  },
+  "Left Semitendinosus": {
+    "bodyExplorerId": "left_semitendinosus",
+    "bodyExplorerMeshNames": [
+      "left_semitendinosus"
+    ],
+    "side": "LEFT",
+    "group": "UPPER_LEG",
+    "fmaIds": [
+      "FMA22359"
+    ]
+  },
+  "Left Serratus Anterior": {
+    "bodyExplorerId": "left_serratus_anterior",
+    "bodyExplorerMeshNames": [
+      "left_serratus_anterior"
+    ],
+    "side": "LEFT",
+    "group": "CHEST",
+    "fmaIds": [
+      "FMA13399"
+    ]
+  },
+  "Left Serratus Posterior Inferior": {
+    "bodyExplorerId": "left_serratus_posterior_inferior",
+    "bodyExplorerMeshNames": [
+      "left_serratus_posterior_inferior"
+    ],
+    "side": "LEFT",
+    "group": "BACK",
+    "fmaIds": [
+      "FMA13406"
+    ]
+  },
+  "Left Serratus Posterior Superior": {
+    "bodyExplorerId": "left_serratus_posterior_superior",
+    "bodyExplorerMeshNames": [
+      "left_serratus_posterior_superior"
+    ],
+    "side": "LEFT",
+    "group": "BACK",
+    "fmaIds": [
+      "FMA13404"
+    ]
+  },
+  "Left Soleus": {
+    "bodyExplorerId": "left_soleus",
+    "bodyExplorerMeshNames": [
+      "left_soleus"
+    ],
+    "side": "LEFT",
+    "group": "LOWER_LEG",
+    "fmaIds": [
+      "FMA22559"
+    ]
+  },
+  "Left Spinalis": {
+    "bodyExplorerId": "",
+    "bodyExplorerMeshNames": [
+      "left_interspinalis_thoracis",
+      "left_spinalis_thoracis"
+    ],
+    "side": "LEFT",
+    "group": "BACK",
+    "fmaIds": [
+      "FMA22780",
+      "FMA22891"
+    ]
+  },
+  "Left Splenius Capitis": {
+    "bodyExplorerId": "left_splenius_capitis",
+    "bodyExplorerMeshNames": [
+      "left_splenius_capitis"
+    ],
+    "side": "LEFT",
+    "group": "HEAD_NECK",
+    "fmaIds": [
+      "FMA22729"
+    ]
+  },
+  "Left Splenius Cervicis": {
+    "bodyExplorerId": "left_splenius_cervicis",
+    "bodyExplorerMeshNames": [
+      "left_splenius_cervicis"
+    ],
+    "side": "LEFT",
+    "group": "HEAD_NECK",
+    "fmaIds": [
+      "FMA22727"
+    ]
+  },
+  "Left Sternocleidomastoid": {
+    "bodyExplorerId": "left_sternocleidomastoid",
+    "bodyExplorerMeshNames": [
+      "left_sternocleidomastoid"
+    ],
+    "side": "LEFT",
+    "group": "HEAD_NECK",
+    "fmaIds": [
+      "FMA13409"
+    ]
+  },
+  "Left Subclavius": {
+    "bodyExplorerId": "left_subclavius",
+    "bodyExplorerMeshNames": [
+      "left_subclavius"
+    ],
+    "side": "LEFT",
+    "group": "SHOULDER",
+    "fmaIds": [
+      "FMA13411"
+    ]
+  },
+  "Left Subscapularis": {
+    "bodyExplorerId": "left_subscapularis",
+    "bodyExplorerMeshNames": [
+      "left_subscapularis"
+    ],
+    "side": "LEFT",
+    "group": "SHOULDER",
+    "fmaIds": [
+      "FMA13415"
+    ]
+  },
+  "Left Supinator": {
+    "bodyExplorerId": "left_supinator",
+    "bodyExplorerMeshNames": [
+      "left_supinator"
+    ],
+    "side": "LEFT",
+    "group": "FOREARM",
+    "fmaIds": [
+      "FMA38514"
+    ]
+  },
+  "Left Supraspinatus": {
+    "bodyExplorerId": "left_supraspinatus",
+    "bodyExplorerMeshNames": [
+      "left_supraspinatus"
+    ],
+    "side": "LEFT",
+    "group": "SHOULDER",
+    "fmaIds": [
+      "FMA32545"
+    ]
+  },
+  "Left Temporalis": {
+    "bodyExplorerId": "left_temporalis",
+    "bodyExplorerMeshNames": [
+      "left_temporalis"
+    ],
+    "side": "LEFT",
+    "group": "HEAD_NECK",
+    "fmaIds": []
+  },
+  "Left Tensor Fasciae Latae": {
+    "bodyExplorerId": "left_tensor_fasciae_latae",
+    "bodyExplorerMeshNames": [
+      "left_tensor_fasciae_latae"
+    ],
+    "side": "LEFT",
+    "group": "HIP",
+    "fmaIds": [
+      "FMA22426"
+    ]
+  },
+  "Left Teres Major": {
+    "bodyExplorerId": "left_teres_major",
+    "bodyExplorerMeshNames": [
+      "left_teres_major"
+    ],
+    "side": "LEFT",
+    "group": "SHOULDER",
+    "fmaIds": [
+      "FMA32552"
+    ]
+  },
+  "Left Teres Minor": {
+    "bodyExplorerId": "left_teres_minor",
+    "bodyExplorerMeshNames": [
+      "left_teres_minor"
+    ],
+    "side": "LEFT",
+    "group": "SHOULDER",
+    "fmaIds": [
+      "FMA32554"
+    ]
+  },
+  "Left Tibialis Anterior": {
+    "bodyExplorerId": "left_tibialis_anterior",
+    "bodyExplorerMeshNames": [
+      "left_tibialis_anterior"
+    ],
+    "side": "LEFT",
+    "group": "LOWER_LEG",
+    "fmaIds": [
+      "FMA22545"
+    ]
+  },
+  "Left Tibialis Posterior": {
+    "bodyExplorerId": "left_tibialis_posterior",
+    "bodyExplorerMeshNames": [
+      "left_tibialis_posterior"
+    ],
+    "side": "LEFT",
+    "group": "LOWER_LEG",
+    "fmaIds": [
+      "FMA65019"
+    ]
+  },
+  "Left Transversus Abdominis": {
+    "bodyExplorerId": "left_transversus_abdominis",
+    "bodyExplorerMeshNames": [
+      "left_transversus_abdominis"
+    ],
+    "side": "LEFT",
+    "group": "ABDOMEN",
+    "fmaIds": []
+  },
+  "Left Trapezius": {
+    "bodyExplorerId": "",
+    "bodyExplorerMeshNames": [
+      "ascending_part_of_left_trapezius",
+      "descending_part_of_left_trapezius",
+      "transverse_part_of_left_trapezius"
+    ],
+    "side": "LEFT",
+    "group": "BACK",
+    "fmaIds": [
+      "FMA33583",
+      "FMA33585",
+      "FMA33587"
+    ]
+  },
+  "Left Triceps Brachii": {
+    "bodyExplorerId": "",
+    "bodyExplorerMeshNames": [
+      "lateral_head_of_left_triceps_brachii",
+      "long_head_of_left_triceps_brachii",
+      "medial_head_of_left_triceps_brachii"
+    ],
+    "side": "LEFT",
+    "group": "UPPER_ARM",
+    "fmaIds": [
+      "FMA37696",
+      "FMA37698",
+      "FMA37700"
+    ]
+  },
+  "Left Vastus Intermedius": {
+    "bodyExplorerId": "left_vastus_intermedius",
+    "bodyExplorerMeshNames": [
+      "left_vastus_intermedius"
+    ],
+    "side": "LEFT",
+    "group": "UPPER_LEG",
+    "fmaIds": [
+      "FMA38935"
+    ]
+  },
+  "Left Vastus Lateralis": {
+    "bodyExplorerId": "left_vastus_lateralis",
+    "bodyExplorerMeshNames": [
+      "left_vastus_lateralis"
+    ],
+    "side": "LEFT",
+    "group": "UPPER_LEG",
+    "fmaIds": [
+      "FMA38931"
+    ]
+  },
+  "Left Vastus Medialis": {
+    "bodyExplorerId": "left_vastus_medialis",
+    "bodyExplorerMeshNames": [
+      "left_vastus_medialis"
+    ],
+    "side": "LEFT",
+    "group": "UPPER_LEG",
+    "fmaIds": [
+      "FMA38933"
+    ]
+  },
+  "Right Adductor Brevis": {
+    "bodyExplorerId": "right_adductor_brevis",
+    "bodyExplorerMeshNames": [
+      "right_adductor_brevis"
+    ],
+    "side": "RIGHT",
+    "group": "UPPER_LEG",
+    "fmaIds": [
+      "FMA22452"
+    ]
+  },
+  "Right Adductor Longus": {
+    "bodyExplorerId": "right_adductor_longus",
+    "bodyExplorerMeshNames": [
+      "right_adductor_longus"
+    ],
+    "side": "RIGHT",
+    "group": "UPPER_LEG",
+    "fmaIds": [
+      "FMA22456"
+    ]
+  },
+  "Right Adductor Magnus": {
+    "bodyExplorerId": "right_adductor_magnus",
+    "bodyExplorerMeshNames": [
+      "right_adductor_magnus"
+    ],
+    "side": "RIGHT",
+    "group": "UPPER_LEG",
+    "fmaIds": [
+      "FMA22459"
+    ]
+  },
+  "Right Anconeus": {
+    "bodyExplorerId": "right_anconeus",
+    "bodyExplorerMeshNames": [
+      "right_anconeus"
+    ],
+    "side": "RIGHT",
+    "group": "UPPER_ARM",
+    "fmaIds": [
+      "FMA37705"
+    ]
+  },
+  "Right Biceps Brachii": {
+    "bodyExplorerId": "",
+    "bodyExplorerMeshNames": [
+      "long_head_of_right_biceps_brachii",
+      "short_head_of_right_biceps_brachii"
+    ],
+    "side": "RIGHT",
+    "group": "UPPER_ARM",
+    "fmaIds": [
+      "FMA37684",
+      "FMA37686"
+    ]
+  },
+  "Right Biceps Femoris": {
+    "bodyExplorerId": "",
+    "bodyExplorerMeshNames": [
+      "long_head_of_right_biceps_femoris",
+      "short_head_of_right_biceps_femoris"
+    ],
+    "side": "RIGHT",
+    "group": "UPPER_LEG",
+    "fmaIds": [
+      "FMA45888",
+      "FMA45891"
+    ]
+  },
+  "Right Brachialis": {
+    "bodyExplorerId": "right_brachialis",
+    "bodyExplorerMeshNames": [
+      "right_brachialis"
+    ],
+    "side": "RIGHT",
+    "group": "UPPER_ARM",
+    "fmaIds": [
+      "FMA37668"
+    ]
+  },
+  "Right Brachioradialis": {
+    "bodyExplorerId": "right_brachioradialis",
+    "bodyExplorerMeshNames": [
+      "right_brachioradialis"
+    ],
+    "side": "RIGHT",
+    "group": "FOREARM",
+    "fmaIds": [
+      "FMA38486"
+    ]
+  },
+  "Right Coracobrachialis": {
+    "bodyExplorerId": "right_coracobrachialis",
+    "bodyExplorerMeshNames": [
+      "right_coracobrachialis"
+    ],
+    "side": "RIGHT",
+    "group": "UPPER_ARM",
+    "fmaIds": [
+      "FMA37665"
+    ]
+  },
+  "Right Deltoid": {
+    "bodyExplorerId": "",
+    "bodyExplorerMeshNames": [
+      "acromial_part_of_right_deltoid",
+      "clavicular_part_of_right_deltoid",
+      "spinal_part_of_right_deltoid"
+    ],
+    "side": "RIGHT",
+    "group": "SHOULDER",
+    "fmaIds": [
+      "FMA34680",
+      "FMA34682",
+      "FMA34684"
+    ]
+  },
+  "Right Extensor Carpi Radialis Brevis": {
+    "bodyExplorerId": "right_extensor_carpi_radialis_brevis",
+    "bodyExplorerMeshNames": [
+      "right_extensor_carpi_radialis_brevis"
+    ],
+    "side": "RIGHT",
+    "group": "FOREARM",
+    "fmaIds": [
+      "FMA38498"
+    ]
+  },
+  "Right Extensor Carpi Radialis Longus": {
+    "bodyExplorerId": "right_extensor_carpi_radialis_longus",
+    "bodyExplorerMeshNames": [
+      "right_extensor_carpi_radialis_longus"
+    ],
+    "side": "RIGHT",
+    "group": "FOREARM",
+    "fmaIds": [
+      "FMA38495"
+    ]
+  },
+  "Right Extensor Carpi Ulnaris": {
+    "bodyExplorerId": "",
+    "bodyExplorerMeshNames": [
+      "right_extensor_carpi_ulnaris",
+      "right_extensor_carpi_ulnaris_(2)"
+    ],
+    "side": "RIGHT",
+    "group": "FOREARM",
+    "fmaIds": [
+      "FMA38507",
+      "FMA38507"
+    ]
+  },
+  "Right Extensor Digitorum Longus": {
+    "bodyExplorerId": "right_extensor_digitorum_longus",
+    "bodyExplorerMeshNames": [
+      "right_extensor_digitorum_longus"
+    ],
+    "side": "RIGHT",
+    "group": "LOWER_LEG",
+    "fmaIds": [
+      "FMA22548"
+    ]
+  },
+  "Right External Oblique": {
+    "bodyExplorerId": "right_external_oblique",
+    "bodyExplorerMeshNames": [
+      "right_external_oblique"
+    ],
+    "side": "RIGHT",
+    "group": "ABDOMEN",
+    "fmaIds": [
+      "FMA13336"
+    ]
+  },
+  "Right Fibularis Brevis": {
+    "bodyExplorerId": "right_fibularis_brevis",
+    "bodyExplorerMeshNames": [
+      "right_fibularis_brevis"
+    ],
+    "side": "RIGHT",
+    "group": "LOWER_LEG",
+    "fmaIds": [
+      "FMA22554"
+    ]
+  },
+  "Right Fibularis Longus": {
+    "bodyExplorerId": "right_fibularis_longus",
+    "bodyExplorerMeshNames": [
+      "right_fibularis_longus"
+    ],
+    "side": "RIGHT",
+    "group": "LOWER_LEG",
+    "fmaIds": [
+      "FMA22552"
+    ]
+  },
+  "Right Flexor Carpi Radialis": {
+    "bodyExplorerId": "right_flexor_carpi_radialis",
+    "bodyExplorerMeshNames": [
+      "right_flexor_carpi_radialis"
+    ],
+    "side": "RIGHT",
+    "group": "FOREARM",
+    "fmaIds": [
+      "FMA38460"
+    ]
+  },
+  "Right Flexor Carpi Ulnaris": {
+    "bodyExplorerId": "",
+    "bodyExplorerMeshNames": [
+      "humeral_head_of_right_flexor_carpi_ulnaris",
+      "ulnar_head_of_right_flexor_carpi_ulnaris"
+    ],
+    "side": "RIGHT",
+    "group": "FOREARM",
+    "fmaIds": [
+      "FMA38617",
+      "FMA38619"
+    ]
+  },
+  "Right Flexor Digitorum Longus": {
+    "bodyExplorerId": "right_flexor_digitorum_longus",
+    "bodyExplorerMeshNames": [
+      "right_flexor_digitorum_longus"
+    ],
+    "side": "RIGHT",
+    "group": "LOWER_LEG",
+    "fmaIds": [
+      "FMA65016"
+    ]
+  },
+  "Right Flexor Hallucis Longus": {
+    "bodyExplorerId": "right_flexor_hallucis_longus",
+    "bodyExplorerMeshNames": [
+      "right_flexor_hallucis_longus"
+    ],
+    "side": "RIGHT",
+    "group": "LOWER_LEG",
+    "fmaIds": [
+      "FMA65014"
+    ]
+  },
+  "Right Gastrocnemius": {
+    "bodyExplorerId": "",
+    "bodyExplorerMeshNames": [
+      "lateral_head_of_right_gastrocnemius",
+      "medial_head_of_right_gastrocnemius"
+    ],
+    "side": "RIGHT",
+    "group": "LOWER_LEG",
+    "fmaIds": [
+      "FMA45957",
+      "FMA45960"
+    ]
+  },
+  "Right Gluteus Maximus": {
+    "bodyExplorerId": "right_gluteus_maximus",
+    "bodyExplorerMeshNames": [
+      "right_gluteus_maximus"
+    ],
+    "side": "RIGHT",
+    "group": "HIP",
+    "fmaIds": [
+      "FMA22328"
+    ]
+  },
+  "Right Gluteus Medius": {
+    "bodyExplorerId": "right_gluteus_medius",
+    "bodyExplorerMeshNames": [
+      "right_gluteus_medius"
+    ],
+    "side": "RIGHT",
+    "group": "HIP",
+    "fmaIds": [
+      "FMA22330"
+    ]
+  },
+  "Right Gluteus Minimus": {
+    "bodyExplorerId": "right_gluteus_minimus",
+    "bodyExplorerMeshNames": [
+      "right_gluteus_minimus"
+    ],
+    "side": "RIGHT",
+    "group": "HIP",
+    "fmaIds": [
+      "FMA22332"
+    ]
+  },
+  "Right Gracilis": {
+    "bodyExplorerId": "right_gracilis",
+    "bodyExplorerMeshNames": [
+      "right_gracilis"
+    ],
+    "side": "RIGHT",
+    "group": "UPPER_LEG",
+    "fmaIds": [
+      "FMA43883"
+    ]
+  },
+  "Right Iliacus": {
+    "bodyExplorerId": "right_iliacus",
+    "bodyExplorerMeshNames": [
+      "right_iliacus"
+    ],
+    "side": "RIGHT",
+    "group": "HIP",
+    "fmaIds": [
+      "FMA22322"
+    ]
+  },
+  "Right Iliocostalis": {
+    "bodyExplorerId": "",
+    "bodyExplorerMeshNames": [
+      "right_iliocostalis_cervicis",
+      "right_iliocostalis_lumborum",
+      "right_iliocostalis_thoracis"
+    ],
+    "side": "RIGHT",
+    "group": "BACK",
+    "fmaIds": [
+      "FMA22740",
+      "FMA22742",
+      "FMA22744"
+    ]
+  },
+  "Right Infraspinatus": {
+    "bodyExplorerId": "right_infraspinatus_muscle",
+    "bodyExplorerMeshNames": [
+      "right_infraspinatus_muscle"
+    ],
+    "side": "RIGHT",
+    "group": "SHOULDER",
+    "fmaIds": [
+      "FMA32547"
+    ]
+  },
+  "Right Internal Oblique": {
+    "bodyExplorerId": "right_internal_oblique",
+    "bodyExplorerMeshNames": [
+      "right_internal_oblique"
+    ],
+    "side": "RIGHT",
+    "group": "ABDOMEN",
+    "fmaIds": []
+  },
+  "Right Latissimus Dorsi": {
+    "bodyExplorerId": "right_latissimus_dorsi",
+    "bodyExplorerMeshNames": [
+      "right_latissimus_dorsi"
+    ],
+    "side": "RIGHT",
+    "group": "BACK",
+    "fmaIds": []
+  },
+  "Right Levator Scapulae": {
+    "bodyExplorerId": "right_levator_scapulae",
+    "bodyExplorerMeshNames": [
+      "right_levator_scapulae"
+    ],
+    "side": "RIGHT",
+    "group": "SHOULDER",
+    "fmaIds": [
+      "FMA32540"
+    ]
+  },
+  "Right Longissimus": {
+    "bodyExplorerId": "",
+    "bodyExplorerMeshNames": [
+      "right_longissimus_capitis",
+      "right_longissimus_cervicis",
+      "right_longissimus_thoracis"
+    ],
+    "side": "RIGHT",
+    "group": "BACK",
+    "fmaIds": [
+      "FMA22751",
+      "FMA22754",
+      "FMA22757"
+    ]
+  },
+  "Right Masseter": {
+    "bodyExplorerId": "",
+    "bodyExplorerMeshNames": [
+      "right_deep_part_of_masseter",
+      "right_superficial_part_of_masseter"
+    ],
+    "side": "RIGHT",
+    "group": "HEAD_NECK",
+    "fmaIds": []
+  },
+  "Right Multifidus": {
+    "bodyExplorerId": "",
+    "bodyExplorerMeshNames": [
+      "right_multifidus_cervicis",
+      "right_multifidus_lumborum",
+      "right_multifidus_thoracis"
+    ],
+    "side": "RIGHT",
+    "group": "BACK",
+    "fmaIds": []
+  },
+  "Right Obturator Externus": {
+    "bodyExplorerId": "right_obturator_externus",
+    "bodyExplorerMeshNames": [
+      "right_obturator_externus"
+    ],
+    "side": "RIGHT",
+    "group": "HIP",
+    "fmaIds": [
+      "FMA22326"
+    ]
+  },
+  "Right Obturator Internus": {
+    "bodyExplorerId": "right_obturator_internus",
+    "bodyExplorerMeshNames": [
+      "right_obturator_internus"
+    ],
+    "side": "RIGHT",
+    "group": "HIP",
+    "fmaIds": [
+      "FMA22324"
+    ]
+  },
+  "Right Palmaris Longus": {
+    "bodyExplorerId": "right_palmaris_longus",
+    "bodyExplorerMeshNames": [
+      "right_palmaris_longus"
+    ],
+    "side": "RIGHT",
+    "group": "FOREARM",
+    "fmaIds": [
+      "FMA38463"
+    ]
+  },
+  "Right Pectineus": {
+    "bodyExplorerId": "right_pectineus",
+    "bodyExplorerMeshNames": [
+      "right_pectineus"
+    ],
+    "side": "RIGHT",
+    "group": "HIP",
+    "fmaIds": [
+      "FMA22450"
+    ]
+  },
+  "Right Pectoralis Major": {
+    "bodyExplorerId": "",
+    "bodyExplorerMeshNames": [
+      "abdominal_part_of_right_pectoralis_major",
+      "clavicular_part_of_right_pectoralis_major",
+      "sternocostal_part_of_right_pectoralis_major"
+    ],
+    "side": "RIGHT",
+    "group": "CHEST",
+    "fmaIds": [
+      "FMA34690",
+      "FMA45874",
+      "FMA79979"
+    ]
+  },
+  "Right Pectoralis Minor": {
+    "bodyExplorerId": "right_pectoralis_minor",
+    "bodyExplorerMeshNames": [
+      "right_pectoralis_minor"
+    ],
+    "side": "RIGHT",
+    "group": "CHEST",
+    "fmaIds": [
+      "FMA13375"
+    ]
+  },
+  "Right Piriformis": {
+    "bodyExplorerId": "right_piriformis",
+    "bodyExplorerMeshNames": [
+      "right_piriformis"
+    ],
+    "side": "RIGHT",
+    "group": "HIP",
+    "fmaIds": [
+      "FMA22340"
+    ]
+  },
+  "Right Popliteus": {
+    "bodyExplorerId": "right_popliteus",
+    "bodyExplorerMeshNames": [
+      "right_popliteus"
+    ],
+    "side": "RIGHT",
+    "group": "LOWER_LEG",
+    "fmaIds": [
+      "FMA22591"
+    ]
+  },
+  "Right Pronator Quadratus": {
+    "bodyExplorerId": "right_pronator_quadratus",
+    "bodyExplorerMeshNames": [
+      "right_pronator_quadratus"
+    ],
+    "side": "RIGHT",
+    "group": "FOREARM",
+    "fmaIds": [
+      "FMA38454"
+    ]
+  },
+  "Right Pronator Teres": {
+    "bodyExplorerId": "",
+    "bodyExplorerMeshNames": [
+      "humeral_head_of_right_pronator_teres",
+      "ulnar_head_of_right_pronator_teres"
+    ],
+    "side": "RIGHT",
+    "group": "FOREARM",
+    "fmaIds": [
+      "FMA38560",
+      "FMA38562"
+    ]
+  },
+  "Right Psoas Major": {
+    "bodyExplorerId": "right_psoas_major",
+    "bodyExplorerMeshNames": [
+      "right_psoas_major"
+    ],
+    "side": "RIGHT",
+    "group": "HIP",
+    "fmaIds": [
+      "FMA22342"
+    ]
+  },
+  "Right Quadratus Femoris": {
+    "bodyExplorerId": "right_quadratus_femoris",
+    "bodyExplorerMeshNames": [
+      "right_quadratus_femoris"
+    ],
+    "side": "RIGHT",
+    "group": "HIP",
+    "fmaIds": [
+      "FMA22338"
+    ]
+  },
+  "Right Quadratus Lumborum": {
+    "bodyExplorerId": "right_quadratus_lumborum",
+    "bodyExplorerMeshNames": [
+      "right_quadratus_lumborum"
+    ],
+    "side": "RIGHT",
+    "group": "BACK",
+    "fmaIds": []
+  },
+  "Right Rectus Abdominis": {
+    "bodyExplorerId": "right_rectus_abdominis",
+    "bodyExplorerMeshNames": [
+      "right_rectus_abdominis"
+    ],
+    "side": "RIGHT",
+    "group": "ABDOMEN",
+    "fmaIds": []
+  },
+  "Right Rectus Femoris": {
+    "bodyExplorerId": "right_rectus_femoris",
+    "bodyExplorerMeshNames": [
+      "right_rectus_femoris"
+    ],
+    "side": "RIGHT",
+    "group": "UPPER_LEG",
+    "fmaIds": [
+      "FMA38928"
+    ]
+  },
+  "Right Rhomboid Major": {
+    "bodyExplorerId": "right_rhomboid_major",
+    "bodyExplorerMeshNames": [
+      "right_rhomboid_major"
+    ],
+    "side": "RIGHT",
+    "group": "BACK",
+    "fmaIds": [
+      "FMA13381"
+    ]
+  },
+  "Right Rhomboid Minor": {
+    "bodyExplorerId": "right_rhomboid_minor",
+    "bodyExplorerMeshNames": [
+      "right_rhomboid_minor"
+    ],
+    "side": "RIGHT",
+    "group": "BACK",
+    "fmaIds": [
+      "FMA13383"
+    ]
+  },
+  "Right Sartorius": {
+    "bodyExplorerId": "right_sartorius",
+    "bodyExplorerMeshNames": [
+      "right_sartorius"
+    ],
+    "side": "RIGHT",
+    "group": "UPPER_LEG",
+    "fmaIds": [
+      "FMA22354"
+    ]
+  },
+  "Right Scalenus Anterior": {
+    "bodyExplorerId": "right_scalenus_anterior",
+    "bodyExplorerMeshNames": [
+      "right_scalenus_anterior"
+    ],
+    "side": "RIGHT",
+    "group": "HEAD_NECK",
+    "fmaIds": [
+      "FMA13392"
+    ]
+  },
+  "Right Scalenus Medius": {
+    "bodyExplorerId": "right_scalenus_medius",
+    "bodyExplorerMeshNames": [
+      "right_scalenus_medius"
+    ],
+    "side": "RIGHT",
+    "group": "HEAD_NECK",
+    "fmaIds": [
+      "FMA13390"
+    ]
+  },
+  "Right Scalenus Posterior": {
+    "bodyExplorerId": "right_scalenus_posterior",
+    "bodyExplorerMeshNames": [
+      "right_scalenus_posterior"
+    ],
+    "side": "RIGHT",
+    "group": "HEAD_NECK",
+    "fmaIds": [
+      "FMA13388"
+    ]
+  },
+  "Right Semimembranosus": {
+    "bodyExplorerId": "right_semimembranosus",
+    "bodyExplorerMeshNames": [
+      "right_semimembranosus"
+    ],
+    "side": "RIGHT",
+    "group": "UPPER_LEG",
+    "fmaIds": [
+      "FMA22448"
+    ]
+  },
+  "Right Semispinalis Capitis": {
+    "bodyExplorerId": "right_semispinalis_capitis",
+    "bodyExplorerMeshNames": [
+      "right_semispinalis_capitis"
+    ],
+    "side": "RIGHT",
+    "group": "BACK",
+    "fmaIds": [
+      "FMA22876"
+    ]
+  },
+  "Right Semispinalis Cervicis": {
+    "bodyExplorerId": "right_semispinalis_cervicis",
+    "bodyExplorerMeshNames": [
+      "right_semispinalis_cervicis"
+    ],
+    "side": "RIGHT",
+    "group": "BACK",
+    "fmaIds": [
+      "FMA22874"
+    ]
+  },
+  "Right Semitendinosus": {
+    "bodyExplorerId": "right_semitendinosus",
+    "bodyExplorerMeshNames": [
+      "right_semitendinosus"
+    ],
+    "side": "RIGHT",
+    "group": "UPPER_LEG",
+    "fmaIds": [
+      "FMA22358"
+    ]
+  },
+  "Right Serratus Anterior": {
+    "bodyExplorerId": "right_serratus_anterior",
+    "bodyExplorerMeshNames": [
+      "right_serratus_anterior"
+    ],
+    "side": "RIGHT",
+    "group": "CHEST",
+    "fmaIds": [
+      "FMA13398"
+    ]
+  },
+  "Right Serratus Posterior Inferior": {
+    "bodyExplorerId": "right_serratus_posterior_inferior",
+    "bodyExplorerMeshNames": [
+      "right_serratus_posterior_inferior"
+    ],
+    "side": "RIGHT",
+    "group": "BACK",
+    "fmaIds": [
+      "FMA13405"
+    ]
+  },
+  "Right Serratus Posterior Superior": {
+    "bodyExplorerId": "right_serratus_posterior_superior",
+    "bodyExplorerMeshNames": [
+      "right_serratus_posterior_superior"
+    ],
+    "side": "RIGHT",
+    "group": "BACK",
+    "fmaIds": [
+      "FMA13403"
+    ]
+  },
+  "Right Soleus": {
+    "bodyExplorerId": "right_soleus",
+    "bodyExplorerMeshNames": [
+      "right_soleus"
+    ],
+    "side": "RIGHT",
+    "group": "LOWER_LEG",
+    "fmaIds": [
+      "FMA22558"
+    ]
+  },
+  "Right Spinalis": {
+    "bodyExplorerId": "",
+    "bodyExplorerMeshNames": [
+      "right_interspinalis_thoracis",
+      "right_spinalis_thoracis"
+    ],
+    "side": "RIGHT",
+    "group": "BACK",
+    "fmaIds": [
+      "FMA22779",
+      "FMA22890"
+    ]
+  },
+  "Right Splenius Capitis": {
+    "bodyExplorerId": "right_splenius_capitis",
+    "bodyExplorerMeshNames": [
+      "right_splenius_capitis"
+    ],
+    "side": "RIGHT",
+    "group": "HEAD_NECK",
+    "fmaIds": [
+      "FMA22728"
+    ]
+  },
+  "Right Splenius Cervicis": {
+    "bodyExplorerId": "right_splenius_cervicis",
+    "bodyExplorerMeshNames": [
+      "right_splenius_cervicis"
+    ],
+    "side": "RIGHT",
+    "group": "HEAD_NECK",
+    "fmaIds": [
+      "FMA22726"
+    ]
+  },
+  "Right Sternocleidomastoid": {
+    "bodyExplorerId": "right_sternocleidomastoid",
+    "bodyExplorerMeshNames": [
+      "right_sternocleidomastoid"
+    ],
+    "side": "RIGHT",
+    "group": "HEAD_NECK",
+    "fmaIds": [
+      "FMA13408"
+    ]
+  },
+  "Right Subclavius": {
+    "bodyExplorerId": "right_subclavius",
+    "bodyExplorerMeshNames": [
+      "right_subclavius"
+    ],
+    "side": "RIGHT",
+    "group": "SHOULDER",
+    "fmaIds": [
+      "FMA13412"
+    ]
+  },
+  "Right Subscapularis": {
+    "bodyExplorerId": "right_subscapularis",
+    "bodyExplorerMeshNames": [
+      "right_subscapularis"
+    ],
+    "side": "RIGHT",
+    "group": "SHOULDER",
+    "fmaIds": [
+      "FMA13414"
+    ]
+  },
+  "Right Supinator": {
+    "bodyExplorerId": "right_supinator",
+    "bodyExplorerMeshNames": [
+      "right_supinator"
+    ],
+    "side": "RIGHT",
+    "group": "FOREARM",
+    "fmaIds": [
+      "FMA38513"
+    ]
+  },
+  "Right Supraspinatus": {
+    "bodyExplorerId": "right_supraspinatus",
+    "bodyExplorerMeshNames": [
+      "right_supraspinatus"
+    ],
+    "side": "RIGHT",
+    "group": "SHOULDER",
+    "fmaIds": [
+      "FMA32544"
+    ]
+  },
+  "Right Temporalis": {
+    "bodyExplorerId": "right_temporalis",
+    "bodyExplorerMeshNames": [
+      "right_temporalis"
+    ],
+    "side": "RIGHT",
+    "group": "HEAD_NECK",
+    "fmaIds": []
+  },
+  "Right Tensor Fasciae Latae": {
+    "bodyExplorerId": "right_tensor_fasciae_latae",
+    "bodyExplorerMeshNames": [
+      "right_tensor_fasciae_latae"
+    ],
+    "side": "RIGHT",
+    "group": "HIP",
+    "fmaIds": [
+      "FMA22425"
+    ]
+  },
+  "Right Teres Major": {
+    "bodyExplorerId": "right_teres_major",
+    "bodyExplorerMeshNames": [
+      "right_teres_major"
+    ],
+    "side": "RIGHT",
+    "group": "SHOULDER",
+    "fmaIds": [
+      "FMA32551"
+    ]
+  },
+  "Right Teres Minor": {
+    "bodyExplorerId": "right_teres_minor",
+    "bodyExplorerMeshNames": [
+      "right_teres_minor"
+    ],
+    "side": "RIGHT",
+    "group": "SHOULDER",
+    "fmaIds": [
+      "FMA32553"
+    ]
+  },
+  "Right Tibialis Anterior": {
+    "bodyExplorerId": "right_tibialis_anterior",
+    "bodyExplorerMeshNames": [
+      "right_tibialis_anterior"
+    ],
+    "side": "RIGHT",
+    "group": "LOWER_LEG",
+    "fmaIds": [
+      "FMA22544"
+    ]
+  },
+  "Right Tibialis Posterior": {
+    "bodyExplorerId": "right_tibialis_posterior",
+    "bodyExplorerMeshNames": [
+      "right_tibialis_posterior"
+    ],
+    "side": "RIGHT",
+    "group": "LOWER_LEG",
+    "fmaIds": [
+      "FMA65018"
+    ]
+  },
+  "Right Transversus Abdominis": {
+    "bodyExplorerId": "right_transversus_abdominis",
+    "bodyExplorerMeshNames": [
+      "right_transversus_abdominis"
+    ],
+    "side": "RIGHT",
+    "group": "ABDOMEN",
+    "fmaIds": []
+  },
+  "Right Trapezius": {
+    "bodyExplorerId": "",
+    "bodyExplorerMeshNames": [
+      "ascending_part_of_right_trapezius",
+      "descending_part_of_right_trapezius",
+      "transverse_part_of_right_trapezius"
+    ],
+    "side": "RIGHT",
+    "group": "BACK",
+    "fmaIds": [
+      "FMA33581",
+      "FMA33584",
+      "FMA33586"
+    ]
+  },
+  "Right Triceps Brachii": {
+    "bodyExplorerId": "",
+    "bodyExplorerMeshNames": [
+      "lateral_head_of_right_triceps_brachii",
+      "long_head_of_right_triceps_brachii",
+      "medial_head_of_right_triceps_brachii"
+    ],
+    "side": "RIGHT",
+    "group": "UPPER_ARM",
+    "fmaIds": [
+      "FMA37695",
+      "FMA37697",
+      "FMA37699"
+    ]
+  },
+  "Right Vastus Intermedius": {
+    "bodyExplorerId": "right_vastus_intermedius",
+    "bodyExplorerMeshNames": [
+      "right_vastus_intermedius"
+    ],
+    "side": "RIGHT",
+    "group": "UPPER_LEG",
+    "fmaIds": [
+      "FMA38934"
+    ]
+  },
+  "Right Vastus Lateralis": {
+    "bodyExplorerId": "right_vastus_lateralis",
+    "bodyExplorerMeshNames": [
+      "right_vastus_lateralis"
+    ],
+    "side": "RIGHT",
+    "group": "UPPER_LEG",
+    "fmaIds": [
+      "FMA38930"
+    ]
+  },
+  "Right Vastus Medialis": {
+    "bodyExplorerId": "right_vastus_medialis",
+    "bodyExplorerMeshNames": [
+      "right_vastus_medialis"
+    ],
+    "side": "RIGHT",
+    "group": "UPPER_LEG",
+    "fmaIds": [
+      "FMA38932"
+    ]
+  }
+}

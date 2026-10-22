@@ -1,0 +1,450 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --font-sans: "Inter", "Segoe UI", system-ui, sans-serif;
+}
+
+:root {
+  --radius: 0.75rem;
+  --background: #000000;
+  --foreground: oklch(0.97 0.01 240);
+  --card: #000000;
+  --card-foreground: oklch(0.97 0.01 240);
+  --popover: #000000;
+  --popover-foreground: oklch(0.97 0.01 240);
+  --primary: oklch(0.78 0.12 230);
+  --primary-foreground: oklch(0.18 0.04 250);
+  --secondary: #ffffff;
+  --secondary-foreground: #000000;
+  --muted: #000000;
+  --muted-foreground: oklch(0.72 0.02 240);
+  --accent: #000000;
+  --accent-foreground: oklch(0.97 0.01 240);
+  --destructive: oklch(0.65 0.2 20);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 12%);
+  --ring: oklch(0.78 0.12 230);
+  --chart-1: oklch(0.78 0.12 230);
+  --chart-2: oklch(0.72 0.14 165);
+  --chart-3: oklch(0.7 0.12 80);
+  --chart-4: oklch(0.68 0.16 300);
+  --chart-5: oklch(0.64 0.18 20);
+  --sidebar: #000000;
+  --sidebar-foreground: oklch(0.97 0.01 240);
+  --sidebar-primary: oklch(0.78 0.12 230);
+  --sidebar-primary-foreground: oklch(0.18 0.04 250);
+  --sidebar-accent: #000000;
+  --sidebar-accent-foreground: oklch(0.97 0.01 240);
+  --sidebar-border: oklch(1 0 0 / 8%);
+  --sidebar-ring: oklch(0.78 0.12 230);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+    background: #000;
+  }
+
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-background font-sans text-foreground antialiased;
+  }
+}
+
+.camera-preview-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  background: #000;
+  aspect-ratio: 16 / 9;
+}
+
+.camera-preview-wrap.large {
+  aspect-ratio: 4 / 3;
+}
+
+.camera-preview {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #000;
+}
+
+/* Selfie mirror. CSS only — pose detection still reads the raw camera frames. */
+.mirror-video {
+  transform: scaleX(-1);
+}
+
+.silhouette-guide {
+  pointer-events: none;
+  position: absolute;
+  inset: 8%;
+  border: 2px dashed color-mix(in oklab, var(--primary) 45%, transparent);
+  border-radius: 40% 40% 12% 12%;
+}
+
+.rotation-debug-overlay {
+  pointer-events: none;
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  z-index: 2;
+  margin: 0;
+  max-width: min(320px, calc(100% - 24px));
+  border-radius: 8px;
+  background: rgb(0 0 0 / 72%);
+  color: #d6f5ff;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.45;
+  padding: 10px 12px;
+  white-space: pre-wrap;
+}
+
+.body-explorer-canvas,
+.rigged-canvas {
+  position: relative;
+  min-height: 360px;
+  flex: 1 1 0;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: #000;
+}
+
+.body-explorer-canvas canvas,
+.rigged-canvas canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.rigged-placeholder {
+  display: flex;
+  min-height: 360px;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  text-align: center;
+  color: var(--muted-foreground);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: #000;
+}
+
+/* Landscape panel → portrait stage: 90° left (counterclockwise). */
+.kiosk-screen-rotate {
+  position: fixed;
+  top: 100%;
+  left: 0;
+  width: 100dvh;
+  height: 100dvw;
+  overflow: hidden;
+  transform: rotate(-90deg);
+  transform-origin: top left;
+  background: #000;
+}
+
+/* Exercise session fills the landscape display without the portrait rotation. */
+.kiosk-screen-flat {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+}
+
+.smart-mirror-screen {
+  font-family: var(--font-sans);
+}
+
+.smart-mirror-wireframe canvas {
+  display: block;
+  background: transparent;
+}
+
+.smart-mirror-exercise {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.75rem;
+  text-align: right;
+}
+
+.smart-mirror-demo-slot {
+  width: 100%;
+  max-height: 22vh;
+  overflow: hidden;
+}
+
+.smart-mirror-demo-slot > * {
+  min-height: 0;
+  max-height: 22vh;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
+}
+
+.smart-mirror-demo-slot video {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  max-height: 22vh;
+  height: auto;
+  margin-left: auto;
+  object-fit: contain;
+  background: transparent;
+}
+
+.smart-mirror-exercise-name {
+  margin: 0;
+  max-width: 100%;
+  color: #ffffff;
+  font-size: clamp(1.5rem, min(3vh, 4vw), 3rem);
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.smart-mirror-rep-count {
+  margin: 0;
+  color: #60d2ff;
+  font-size: clamp(2.75rem, min(6.5vh, 8vw), 6.5rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 0.95;
+}
+
+.display-diagnostic {
+  min-height: 100vh;
+  padding: 1.5rem;
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--font-sans);
+}
+
+.display-diagnostic-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.display-diagnostic-header h1,
+.display-diagnostic h2 {
+  margin: 0 0 0.35rem;
+}
+
+.display-diagnostic-header p,
+.display-diagnostic-note,
+.display-diagnostic section p {
+  margin: 0.25rem 0;
+}
+
+.display-diagnostic-note {
+  max-width: 46rem;
+  color: var(--muted-foreground);
+}
+
+.display-diagnostic section {
+  margin-top: 1.5rem;
+}
+
+.display-diagnostic ul {
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.display-diagnostic li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.display-diagnostic button {
+  border: 1px solid #000;
+  border-radius: var(--radius);
+  background: #fff;
+  color: #000;
+  padding: 0.45rem 0.8rem;
+  cursor: pointer;
+}
+
+.hardware-diagnostic h3 {
+  margin: 1.25rem 0 0.35rem;
+  font-size: 1rem;
+}
+
+.hardware-diagnostic-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.hardware-diagnostic-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 0.75rem 1rem;
+  margin-top: 0.75rem;
+}
+
+.hardware-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.hardware-field-label,
+.hardware-reading-list dt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.hardware-field-control {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.hardware-field input {
+  width: 7rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #000;
+  color: var(--foreground);
+  padding: 0.35rem 0.5rem;
+}
+
+.hardware-status {
+  border-radius: 999px;
+  padding: 0.1rem 0.45rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.hardware-status-detected {
+  background: #16361f;
+  color: #b7f7c7;
+}
+
+.hardware-status-entered {
+  background: #3a2d12;
+  color: #ffe0a3;
+}
+
+.hardware-status-unknown {
+  background: #2a2a2a;
+  color: #c8c8c8;
+}
+
+.hardware-reading-list {
+  margin: 0.75rem 0 0;
+}
+
+.hardware-reading-list div {
+  display: grid;
+  grid-template-columns: minmax(12rem, 22rem) 1fr;
+  gap: 0.75rem;
+  padding: 0.55rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.hardware-reading-list dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.hardware-convention {
+  margin: 0.5rem 0 0;
+  padding-left: 1.2rem;
+}
+
+.hardware-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.smart-mirror-status {
+  position: absolute;
+  left: 4%;
+  bottom: 5%;
+  z-index: 1;
+  max-width: 58%;
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(1.25rem, min(3vh, 3vw), 2.25rem);
+  font-weight: 600;
+  line-height: 1.25;
+}

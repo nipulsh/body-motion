@@ -1,0 +1,321 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum JobStatus {
+  QUEUED
+  ANALYZING
+  GENERATING_IMAGES
+  CREATING_3D_MODEL
+  RIGGING
+  COMPLETED
+  FAILED
+}
+
+enum PipelineStep {
+  ANALYSIS
+  IMAGE_GENERATION
+  MODEL_GENERATION
+  RIGGING
+}
+
+enum MeshyTaskKind {
+  MULTI_IMAGE_TO_3D
+  RIGGING
+}
+
+enum MeshyTaskStatus {
+  PENDING
+  IN_PROGRESS
+  SUCCEEDED
+  FAILED
+  CANCELED
+}
+
+enum GeneratedImageView {
+  FRONT
+  RIGHT
+  BACK
+  LEFT
+}
+
+enum BodySide {
+  LEFT
+  RIGHT
+  BILATERAL
+  MIDLINE
+  UNKNOWN
+}
+
+enum ScanType {
+  BODY_360
+  TIMED_BURST
+}
+
+enum ScanStatus {
+  CREATED
+  UPLOADING
+  UPLOADED
+  PROCESSING
+  ANALYZING
+  GENERATING_MODEL
+  COMPLETED
+  FAILED
+}
+
+enum PatientModelFormat {
+  GLB
+}
+
+/// Mirrors a Clerk user. `id` is the Clerk user id.
+model User {
+  id         String    @id
+  email      String?
+  hospitalId String?   @unique
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  hospital Hospital? @relation(fields: [hospitalId], references: [id], onDelete: SetNull)
+
+  @@map("users")
+}
+
+model Hospital {
+  id        String   @id @default(uuid())
+  name      String
+  email     String?
+  phone     String?
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User?
+  patients HospitalPatient[]
+
+  @@map("hospitals")
+}
+
+model HospitalPatient {
+  hospitalId String
+  patientId  String
+  createdAt  DateTime @default(now())
+
+  hospital Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  patient  Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@id([hospitalId, patientId])
+  @@index([patientId])
+  @@map("hospital_patients")
+}
+
+model Patient {
+  id                String    @id @default(uuid())
+  firstName         String
+  lastName          String
+  dateOfBirth       DateTime? @db.Date
+  gender            String?
+  phone             String?
+  email             String?
+  deformities       String?
+  chronicConditions String?
+  notes             String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  hospitalLinks HospitalPatient[]
+  scans         Scan[]
+  jobs          AnalysisJob[]
+  images        PatientImage[]
+  models        PatientModel[]
+
+  @@index([lastName, firstName])
+  @@map("patients")
+}
+
+model Scan {
+  id        String     @id @default(uuid())
+  patientId String
+  type      ScanType   @default(BODY_360)
+  status    ScanStatus @default(CREATED)
+  error     String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  patient Patient        @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  images  PatientImage[]
+  models  PatientModel[]
+  jobs    AnalysisJob[]
+
+  @@index([patientId])
+  @@index([status])
+  @@map("scans")
+}
+
+model AnalysisJob {
+  id          String       @id @default(uuid())
+  patientId   String
+  scanId      String?
+  /// Denormalised from Patient so ownership checks and storage paths never need a join.
+  userId      String
+  status      JobStatus    @default(QUEUED)
+  progress    Int          @default(0)
+  currentStep String?
+  failedStep  PipelineStep?
+  error       String?
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  patient         Patient         @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  scan            Scan?           @relation(fields: [scanId], references: [id], onDelete: SetNull)
+  images          PatientImage[]
+  analysisResult  AnalysisResult?
+  muscleFindings  MuscleFinding[]
+  generatedImages GeneratedImage[]
+  meshyJobs       MeshyJob[]
+
+  @@index([patientId])
+  @@index([scanId])
+  @@index([userId])
+  @@index([status])
+  @@map("analysis_jobs")
+}
+
+model PatientImage {
+  id           String   @id @default(uuid())
+  jobId        String?
+  scanId       String?
+  /// Denormalised so patient asset queries do not need to fan out over jobs/scans.
+  patientId    String
+  bucket       String
+  storagePath  String
+  mimeType     String
+  sizeBytes    Int
+  originalName String?
+  angle        String?
+  orderIndex   Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  job     AnalysisJob? @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  scan    Scan?        @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  patient Patient      @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@index([scanId])
+  @@index([patientId])
+  @@map("patient_images")
+}
+
+model PatientModel {
+  id          String             @id @default(uuid())
+  patientId   String
+  scanId      String?
+  bucket      String
+  storagePath String
+  format      PatientModelFormat @default(GLB)
+  mimeType    String
+  sizeBytes   Int
+  fileName    String?
+  createdAt   DateTime           @default(now())
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  scan    Scan?   @relation(fields: [scanId], references: [id], onDelete: Cascade)
+
+  @@index([patientId])
+  @@index([scanId])
+  @@map("patient_models")
+}
+
+model AnalysisResult {
+  id                  String   @id @default(uuid())
+  jobId               String   @unique
+  bodyRegion          String
+  observedDeformation String
+  affectedSide        BodySide
+  summary             String
+  modelName           String
+  /// Zod-validated analysis payload exactly as served by GET /jobs/:jobId/analysis.
+  parsed              Json
+  /// Untouched Gemini response envelope, kept for audit and reprocessing.
+  rawResponse         Json
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  job            AnalysisJob     @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  muscleFindings MuscleFinding[]
+
+  @@map("analysis_results")
+}
+
+model MuscleFinding {
+  id               String   @id @default(uuid())
+  jobId            String
+  analysisResultId String
+  name             String
+  side             BodySide
+  likelihood       Float
+  deformation      String
+  intensity        Float
+  reason           String
+  /// GLB node name in BodyExplorer's anatomy.glb; empty when the muscle spans several meshes.
+  bodyExplorerId   String   @default("")
+  /// Every BodyExplorer mesh that makes up this muscle.
+  bodyExplorerMeshNames String[] @default([])
+  createdAt        DateTime @default(now())
+
+  job            AnalysisJob    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  analysisResult AnalysisResult @relation(fields: [analysisResultId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@index([analysisResultId])
+  @@map("muscle_findings")
+}
+
+model GeneratedImage {
+  id          String             @id @default(uuid())
+  jobId       String
+  view        GeneratedImageView
+  bucket      String
+  storagePath String
+  mimeType    String
+  prompt      String
+  modelName   String
+  createdAt   DateTime           @default(now())
+
+  job AnalysisJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, view])
+  @@index([jobId])
+  @@map("generated_images")
+}
+
+model MeshyJob {
+  id       String          @id @default(uuid())
+  jobId    String
+  kind     MeshyTaskKind
+  taskId   String
+  status   MeshyTaskStatus @default(PENDING)
+  progress Int             @default(0)
+  /// Meshy-hosted GLB URL. Expires, so it is mirrored into Supabase Storage.
+  modelUrl String?
+  bucket   String?
+  storagePath String?
+  error    String?
+  raw      Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  job AnalysisJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, kind])
+  @@index([jobId])
+  @@index([taskId])
+  @@map("meshy_jobs")
+}

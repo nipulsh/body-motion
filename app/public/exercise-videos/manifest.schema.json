@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Exercise demonstration video manifest",
+  "type": "object",
+  "required": ["videos"],
+  "properties": {
+    "version": { "type": "integer", "minimum": 1 },
+    "description": { "type": "string" },
+    "referenceImage": {
+      "type": "string",
+      "description": "Path relative to public/exercise-videos/ for the approved 3D model reference image."
+    },
+    "workflow": { "type": "string" },
+    "namingConvention": { "type": "string" },
+    "firstRecommendedExercise": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "reason": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "videos": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "pattern": ".+\\.webm$"
+      },
+      "propertyNames": {
+        "pattern": "^[a-z0-9_-]+$"
+      }
+    }
+  },
+  "additionalProperties": false
+}
