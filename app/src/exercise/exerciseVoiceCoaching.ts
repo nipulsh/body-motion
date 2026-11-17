@@ -1,4 +1,4 @@
-import type { RepPhase } from '@vision';
+import type { ExerciseFormResult, FormFaultCode, RepPhase } from '@vision';
 import type { CountdownStep } from './sessionState';
 
 export type CoachingPriority = 'normal' | 'high';
@@ -163,6 +163,80 @@ export function coachingForCountdownStep(step: CountdownStep): CoachingDecision 
   }
 }
 
+/** Minimum gap before the same form correction is spoken again; longer than the sentence itself. */
+const FORM_CORRECTION_REPEAT_MS = 4000;
+/** Minimum gap between any two form corrections, so alternating faults do not talk over each other. */
+const FORM_CORRECTION_GAP_MS = 3000;
+
+export interface FormCoachingState {
+  lastSpokenAt: number;
+  spokenAtByCode: Partial<Record<FormFaultCode, number>>;
+}
+
+export function createFormCoachingState(): FormCoachingState {
+  return { lastSpokenAt: 0, spokenAtByCode: {} };
+}
+
+export function formFaultCorrection(code: FormFaultCode): string {
+  switch (code) {
+    case 'left_knee_inward':
+      return 'Push your left knee out, keep it over your toes';
+    case 'right_knee_inward':
+      return 'Push your right knee out, keep it over your toes';
+    case 'left_knee_outward':
+      return 'Bring your left knee in, keep it over your toes';
+    case 'right_knee_outward':
+      return 'Bring your right knee in, keep it over your toes';
+    case 'knee_past_toes':
+      return 'Sit back, keep your knees over your toes';
+    case 'chest_dropping':
+      return 'Keep your chest up and your back straight';
+    case 'possible_upper_back_rounding':
+      return 'Your upper back may be rounding';
+    case 'possible_lower_back_rounding':
+      return 'Your lower back may be rounding';
+    case 'possible_combined_rounding':
+      return 'Your upper and lower back may be rounding';
+    case 'trunk_leaning_sideways':
+      return 'Keep your back straight, do not lean to the side';
+    case 'hips_uneven':
+      return 'Keep your hips level';
+    case 'shoulders_uneven':
+      return 'Keep your shoulders level';
+    default: {
+      const _exhaustive: never = code;
+      return _exhaustive;
+    }
+  }
+}
+
+/** The highest-priority fault that has lasted past the sustain time, if any. */
+export function activeFormFault(form: ExerciseFormResult | null | undefined): FormFaultCode | null {
+  if (!form) return null;
+  const faults: readonly { code: FormFaultCode; sustained: boolean }[] = form.faults;
+  return faults.find((fault) => fault.sustained)?.code ?? null;
+}
+
+export function coachingForFormFault(
+  code: FormFaultCode | null,
+  now: number,
+  state: FormCoachingState,
+): { decision: CoachingDecision | null; state: FormCoachingState } {
+  if (!code) return { decision: null, state };
+  if (state.lastSpokenAt > 0 && now - state.lastSpokenAt < FORM_CORRECTION_GAP_MS) {
+    return { decision: null, state };
+  }
+  const lastForCode = state.spokenAtByCode[code];
+  if (lastForCode !== undefined && now - lastForCode < FORM_CORRECTION_REPEAT_MS) {
+    return { decision: null, state };
+  }
+  return {
+    // Normal priority queues behind a rep count instead of cutting it off.
+    decision: { speak: true, voiceText: formFaultCorrection(code), key: `form:${code}`, priority: 'normal' },
+    state: { lastSpokenAt: now, spokenAtByCode: { ...state.spokenAtByCode, [code]: now } },
+  };
+}
+
 export function coachingForPositioning(message: string): CoachingDecision | null {
   const normalized = message.toUpperCase();
   if (normalized.includes('FULL BODY')) {
@@ -182,4 +256,14 @@ export function coachingForPositioning(message: string): CoachingDecision | null
     };
   }
   return null;
+}
+
+/** Squat or lunge model: the outcome of a judged rep (its count, or the correction when not counted). */
+export function coachingForRangeRep(voiceText: string, attempt: number): CoachingDecision {
+  return { speak: true, voiceText, key: `range_rep:${attempt}`, priority: 'high' };
+}
+
+/** Squat or lunge model: the patient faces the wrong way for this set. Queues behind a rep count. */
+export function coachingForViewPrompt(voiceText: string): CoachingDecision {
+  return { speak: true, voiceText, key: `view_prompt:${voiceText}`, priority: 'normal' };
 }

@@ -1,4 +1,4 @@
-import type { PatientImage, PatientModel, Prisma, Scan, ScanStatus, ScanType } from '@prisma/client';
+import { Prisma, type PatientImage, type PatientModel, type Scan, type ScanStatus, type ScanType } from '@prisma/client';
 import { prisma } from './prisma';
 
 export async function createScan(input: {
@@ -22,6 +22,16 @@ export async function listScansForPatient(patientId: string): Promise<Scan[]> {
   return prisma.scan.findMany({
     where: { patientId },
     orderBy: { createdAt: 'desc' },
+  });
+}
+
+export async function updateScanPostureMetrics(
+  scanId: string,
+  postureMetrics: Prisma.InputJsonValue | null,
+): Promise<void> {
+  await prisma.scan.update({
+    where: { id: scanId },
+    data: { postureMetrics: postureMetrics ?? Prisma.DbNull },
   });
 }
 

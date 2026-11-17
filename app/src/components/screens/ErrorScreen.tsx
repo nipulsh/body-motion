@@ -4,12 +4,11 @@ import { MIRROR_GESTURE_TARGET_ATTR } from '@vision/hand/gestureTargets';
 import { retryJob } from '../../api/jobs';
 import { mirrorProcessingStage, shouldRetryJob } from '../../workflow/mirrorJobFlow';
 import { useWorkflow } from '../../workflow/WorkflowContext';
+import { mirrorGestureButtonStackClass, mirrorGestureMenuButtonClass } from '../smartMirror/mirrorGestureButton';
 import { MirrorPortraitCard } from '../smartMirror/MirrorPortraitCard';
+import { mirrorTopZoneFillClass } from '../smartMirror/mirrorTopZone';
 import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
-
-const mirrorControlButtonClass =
-  'h-auto min-h-9 rounded-lg border border-black bg-white px-4 py-1.5 text-sm font-medium text-black shadow-none hover:bg-neutral-50';
 
 export function ErrorScreen() {
   const { state, dispatch } = useWorkflow();
@@ -28,6 +27,8 @@ export function ErrorScreen() {
     if (shouldRetryJob(err) && state.jobId) {
       try {
         await retryJob(state.jobId);
+        // Clears the FAILED status so the retried job is polled again.
+        dispatch({ type: 'SET_JOB', jobId: state.jobId });
         dispatch({ type: 'SET_ERROR', error: null });
         dispatch({ type: 'SET_STAGE', stage: mirrorProcessingStage(state) });
         return;
@@ -44,7 +45,7 @@ export function ErrorScreen() {
 
   return (
     <MirrorPortraitCard testId="mirror-error-card">
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-6 p-8 text-center">
+      <div className={cn('flex min-h-0 flex-col items-center justify-center-safe gap-8 p-8 text-center', mirrorTopZoneFillClass)}>
         <div className="max-w-md space-y-3">
           <h1 className="text-lg font-semibold text-white">{err.title}</h1>
           <p className="text-sm leading-relaxed text-neutral-200 whitespace-pre-line">{err.message}</p>
@@ -52,12 +53,12 @@ export function ErrorScreen() {
             <p className="text-xs break-all text-neutral-400">{err.technical}</p>
           ) : null}
         </div>
-        <div className="flex w-full max-w-xs flex-col gap-3">
+        <div className={cn(mirrorGestureButtonStackClass, 'items-center px-4')}>
           <Button
             type="button"
             variant="outline"
             {...{ [MIRROR_GESTURE_TARGET_ATTR]: 'true' }}
-            className={cn(mirrorControlButtonClass)}
+            className={cn(mirrorGestureMenuButtonClass)}
             onClick={() => void retry()}
           >
             Retry
@@ -66,7 +67,7 @@ export function ErrorScreen() {
             type="button"
             variant="outline"
             {...{ [MIRROR_GESTURE_TARGET_ATTR]: 'true' }}
-            className={cn(mirrorControlButtonClass)}
+            className={cn(mirrorGestureMenuButtonClass)}
             onClick={() => {
               dispatch({ type: 'RESET_CAPTURES' });
               dispatch({ type: 'CLEAR_JOB' });

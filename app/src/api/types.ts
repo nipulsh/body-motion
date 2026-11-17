@@ -114,8 +114,19 @@ export interface AnalysisMuscle {
   deformation: string;
   intensity: number;
   reason: string;
+  /** Share (0–100) of the observed posture deformity attributed to this muscle; all muscles sum to 100. */
+  contributionPercent?: number;
   bodyExplorerId?: string;
   bodyExplorerMeshNames?: string[];
+}
+
+export interface AnalysisDeformity {
+  name: string;
+  region: string;
+  side: MuscleSide;
+  /** 0 = barely present, 1 = pronounced. */
+  severity: number;
+  description: string;
 }
 
 export interface AnalysisResponse {
@@ -123,7 +134,13 @@ export interface AnalysisResponse {
   observedDeformation: string;
   affectedSide: MuscleSide;
   summary: string;
+  /** False when clothing, framing or image quality stopped the analysis; `summary` says why. */
+  analysisPossible?: boolean;
+  /** Every deformity found, most pronounced first. */
+  deformities?: AnalysisDeformity[];
   muscles: AnalysisMuscle[];
+  /** Clinician-only: the AI kept ignoring a measured deviation. Never show on patient screens. */
+  measurementConflict?: string;
 }
 
 export interface GeneratedImageResponseItem {

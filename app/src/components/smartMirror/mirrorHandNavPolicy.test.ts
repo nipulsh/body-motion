@@ -9,6 +9,10 @@ describe('isMirrorHandNavEnabled', () => {
     expect(isMirrorHandNavEnabled('mirror_exercise_session', false)).toBe(true);
   });
 
+  it('enables the failure screen so Retry and Home can be selected by hand', () => {
+    expect(isMirrorHandNavEnabled('error', false)).toBe(true);
+  });
+
   it('disables during balance bird game', () => {
     expect(isMirrorHandNavEnabled('balance_bird_game', false)).toBe(false);
   });

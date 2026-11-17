@@ -22,9 +22,19 @@ export interface TrackingRule {
   startingPosition: string;
   targetPosition: string;
   holdDurationSeconds?: number;
+  /**
+   * Explicit window the joint must reach for the rep to count (client-only, from
+   * `repAngleRanges.ts`). Without it the window is `requiredAngle ± tolerance`.
+   */
+  targetRange?: { min: number; max: number };
+  /** Explicit resting window that arms and completes a rep (client-only). */
+  startRange?: { min: number; max: number };
 }
 
 export type ExerciseModality = 'reps' | 'hand_trace';
+
+/** Whole-body form analysis run alongside rep counting. */
+export type ExerciseFormCheck = 'squat' | 'lunge' | 'deadlift' | 'shoulder';
 
 export interface Exercise {
   id: string;
@@ -32,6 +42,13 @@ export interface Exercise {
   description: string;
   /** `hand_trace` disables rep counting (e.g. fingertip tracing). Defaults to `reps`. */
   modality?: ExerciseModality;
+  /** Client-only: adds knee-line and alignment checks with spoken corrections. */
+  formCheck?: ExerciseFormCheck;
+  /**
+   * Client-only: the squat or lunge model picked before the session (`angleRangeModels.ts` ids,
+   * e.g. `knee_bias`). Its ranges then judge each rep, and only correct or borderline reps count.
+   */
+  rangeModel?: string;
   targetBodyParts: string[];
   difficulty: 'beginner' | 'intermediate' | 'advanced';
   sets: number;

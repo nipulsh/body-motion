@@ -1,5 +1,7 @@
+import { VISION_CONFIG } from '../config';
 import type { PoseLandmark } from '../types';
 import { getLandmark } from '../pose/landmarks';
+import { bodyFootprint, MIN_BODY_SIZE, safeAspect } from '../pose/poseTargetLock';
 import {
   HAND_LANDMARK_COUNT,
   handLandmarkVisibility,
@@ -7,8 +9,9 @@ import {
   type TrackedHand,
 } from './handLandmarksBus';
 import {
+  clipContextToRect,
+  createWireframeMapper,
   jointRadiusForVisibility,
-  toWireframePoint,
   WIREFRAME_MIN_VISIBILITY,
   type WireframeDrawOptions,
 } from '../pose/wireframe';
@@ -89,6 +92,40 @@ function shiftHand(hand: TrackedHand, dx: number, dy: number): TrackedHand {
 }
 
 /**
+ * The hands that belong to this body: a hand's wrist must sit near one of the body's wrists
+ * (`personLock.handReachBodySizes`), so a bystander's hands are left out. Without a body no
+ * hand is anyone's. When the body's size cannot be measured, every hand is kept.
+ * Hands and pose must be raw camera landmarks from the same frame space.
+ */
+export function handsOfPose(
+  hands: readonly TrackedHand[],
+  poseLandmarks: readonly PoseLandmark[] | null | undefined,
+  sourceWidth = 0,
+  sourceHeight = 0,
+): TrackedHand[] {
+  if (hands.length === 0 || !poseLandmarks?.length) return [];
+  const aspect = safeAspect(sourceWidth > 0 && sourceHeight > 0 ? sourceWidth / sourceHeight : undefined);
+  const body = bodyFootprint(poseLandmarks, aspect);
+  if (!body || !Number.isFinite(body.size) || body.size < MIN_BODY_SIZE) return [...hands];
+
+  const reach = VISION_CONFIG.personLock.handReachBodySizes * body.size;
+  const wrists: Array<{ x: number; y: number }> = [];
+  for (const name of ['leftWrist', 'rightWrist'] as const) {
+    const wrist = getLandmark(poseLandmarks, name);
+    // Position only: MediaPipe still places a wrist it scores as hidden.
+    if (wrist && Number.isFinite(wrist.x) && Number.isFinite(wrist.y)) {
+      wrists.push({ x: wrist.x * aspect, y: wrist.y });
+    }
+  }
+
+  return hands.filter((hand) => {
+    const wrist = normalizeHandToImage(hand, sourceWidth, sourceHeight).landmarks[0];
+    if (!wrist || !Number.isFinite(wrist.x) || !Number.isFinite(wrist.y)) return false;
+    return wrists.some((own) => Math.hypot(own.x - wrist.x * aspect, own.y - wrist.y) <= reach);
+  });
+}
+
+/**
  * Move each detected hand so its wrist sits on the pose arm wrist.
  * Left/Right handedness picks the arm. A hand with no label uses the nearest
  * unused wrist. A hand that was not detected is not invented.
@@ -161,6 +198,7 @@ export function drawHandWireframes(
   const jointFillStyle = options?.jointFillStyle ?? 'rgba(255, 255, 255, 0.95)';
 
   const { width, height } = ctx.canvas;
+  ctx.save();
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   ctx.lineWidth = lineWidth;
@@ -172,7 +210,10 @@ export function drawHandWireframes(
     sourceWidth: options?.sourceWidth,
     sourceHeight: options?.sourceHeight,
     mirrorX: options?.mirrorX,
+    project: options?.project,
   };
+  const mapper = createWireframeMapper(width, height, pointOptions);
+  clipContextToRect(ctx, mapper.frame);
   const drawableHands = alignHandsToPoseWrists(
     hands,
     options?.poseLandmarks,
@@ -187,8 +228,9 @@ export function drawHandWireframes(
       if (!isHandPointVisible(from) || !isHandPointVisible(to)) {
         continue;
       }
-      const a = toWireframePoint(from!, width, height, pointOptions);
-      const b = toWireframePoint(to!, width, height, pointOptions);
+      const visible = mapper.segment(from!, to!);
+      if (!visible) continue;
+      const [a, b] = visible;
       ctx.beginPath();
       ctx.moveTo(a.x, a.y);
       ctx.lineTo(b.x, b.y);
@@ -198,7 +240,8 @@ export function drawHandWireframes(
     for (let index = 0; index < HAND_LANDMARK_COUNT; index += 1) {
       const landmark = hand.landmarks[index];
       if (!isHandPointVisible(landmark)) continue;
-      const point = toWireframePoint(landmark!, width, height, pointOptions);
+      const point = mapper.joint(landmark!);
+      if (!point) continue;
       ctx.beginPath();
       ctx.arc(
         point.x,
@@ -210,4 +253,5 @@ export function drawHandWireframes(
       ctx.fill();
     }
   }
+  ctx.restore();
 }

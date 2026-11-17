@@ -15,9 +15,11 @@ import {
 } from '@vision/games/birdFlight';
 import { drawBalanceBirdScene } from '@vision/games/drawGameScene';
 import { mapPoseHipToCanvas } from '@vision/games/playerMarker';
+import { usePlayerWalkAway } from './usePlayerWalkAway';
 import { usePosePreviewCamera } from './usePosePreviewCamera';
 
-export function useBalanceBirdGame() {
+/** `onPlayerLeft` runs once the player has stepped out of the mirror for good. */
+export function useBalanceBirdGame({ onPlayerLeft }: { onPlayerLeft: () => void }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -37,8 +39,10 @@ export function useBalanceBirdGame() {
   const [balance, setBalance] = useState<OneLegBalanceResult>(balanceRef.current);
   const [points, setPoints] = useState(0);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const { notePose, secondsLeft: leavingInSeconds } = usePlayerWalkAway(onPlayerLeft);
 
   const onPose = useCallback((pose: PoseResult | null, frame: { width: number; height: number } | null) => {
+    notePose(pose);
     poseRef.current = pose;
     frameSizeRef.current = frame;
     const next = detectOneLegBalance(pose);
@@ -58,9 +62,10 @@ export function useBalanceBirdGame() {
       setPoints(scored.state.points);
       pulseUntilRef.current = performance.now() + 450;
     }
-  }, []);
+  }, [notePose]);
 
-  const { error: poseError } = usePosePreviewCamera(videoRef, onPose, true);
+  // Poses arrive upright for the portrait stage (the camera is turned on its side with the TV).
+  const { error: poseError, turn: cameraTurn, pictureAspect } = usePosePreviewCamera(videoRef, onPose, true);
 
   useEffect(() => {
     setCameraError(poseError);
@@ -88,9 +93,9 @@ export function useBalanceBirdGame() {
     const frame = (now: number) => {
       const dt = now - lastTs;
       lastTs = now;
-      const rect = stage.getBoundingClientRect();
-      const width = Math.max(1, Math.round(rect.width));
-      const height = Math.max(1, Math.round(rect.height));
+      // Layout size, not the bounding box: the kiosk shell rotates this element.
+      const width = Math.max(1, stage.clientWidth);
+      const height = Math.max(1, stage.clientHeight);
       if (canvas.width !== width || canvas.height !== height) {
         canvas.width = width;
         canvas.height = height;
@@ -115,6 +120,8 @@ export function useBalanceBirdGame() {
         frameSize?.width ?? 0,
         frameSize?.height ?? 0,
         true,
+        // Same fit as the video: full stage height, sides cropped when wider.
+        'height',
       );
 
       const ctx = canvas.getContext('2d');
@@ -142,5 +149,8 @@ export function useBalanceBirdGame() {
     balance,
     points,
     cameraError,
+    leavingInSeconds,
+    cameraTurn,
+    pictureAspect,
   };
 }

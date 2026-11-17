@@ -42,16 +42,48 @@ function analysisLoadFailureError(state: WorkflowState, technical?: string): Wor
   };
 }
 
+/** Stages where a finished job should open results or the error screen immediately. */
+function presentsJobOutcome(stage: WorkflowStage): boolean {
+  return stage === 'mirror_processing' || stage === 'mirror_uploading' || stage === 'processing';
+}
+
+interface JobOutcome {
+  stage: WorkflowStage;
+  error?: WorkflowError;
+}
+
 export function useJobPolling(active: boolean) {
   const { state, dispatch } = useWorkflow();
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const stateRef = useRef(state);
+  stateRef.current = state;
+  // A job that settled while the patient was elsewhere; shown when they return to its progress page.
+  const pendingOutcomeRef = useRef<{ jobId: string; outcome: JobOutcome } | null>(null);
 
   useEffect(() => {
     if (!active || !state.jobId) return;
 
     const jobId = state.jobId;
 
+    const present = (outcome: JobOutcome) => {
+      if (outcome.error) dispatch({ type: 'SET_ERROR', error: outcome.error });
+      dispatch({ type: 'SET_STAGE', stage: outcome.stage });
+    };
+
+    // Reads the stage after the awaits, so leaving mid-poll does not drag the patient back.
+    const settle = (outcome: JobOutcome) => {
+      const latest = stateRef.current;
+      if (latest.jobId !== jobId) return;
+      if (presentsJobOutcome(latest.stage)) {
+        pendingOutcomeRef.current = null;
+        present(outcome);
+      } else {
+        pendingOutcomeRef.current = { jobId, outcome };
+      }
+    };
+
     const poll = async () => {
+      const current = stateRef.current;
       try {
         const status = await getJob(jobId);
         dispatch({ type: 'SET_JOB_STATUS', status });
@@ -61,7 +93,7 @@ export function useJobPolling(active: boolean) {
             const analysis = await getAnalysis(jobId);
             dispatch({ type: 'SET_ANALYSIS', analysis });
 
-            if (!isMirrorJobFlow(state)) {
+            if (!isMirrorJobFlow(current)) {
               let riggedGlbUrl: string | null = null;
               try {
                 const model = await getModel(jobId);
@@ -72,21 +104,13 @@ export function useJobPolling(active: boolean) {
               dispatch({ type: 'SET_RIGGED_URL', url: riggedGlbUrl });
             }
 
-            dispatch({ type: 'SET_STAGE', stage: state.jobCompleteStage });
+            settle({ stage: current.jobCompleteStage });
           } catch (err) {
             console.error('Analysis fetch failed:', err);
-            dispatch({
-              type: 'SET_ERROR',
-              error: analysisLoadFailureError(state, errorText(err)),
-            });
-            dispatch({ type: 'SET_STAGE', stage: 'error' });
+            settle({ stage: 'error', error: analysisLoadFailureError(current, errorText(err)) });
           }
         } else if (status.status === 'FAILED') {
-          dispatch({
-            type: 'SET_ERROR',
-            error: processingFailureError(state, status.error ?? undefined),
-          });
-          dispatch({ type: 'SET_STAGE', stage: 'error' });
+          settle({ stage: 'error', error: processingFailureError(current, status.error ?? undefined) });
         }
       } catch (err) {
         console.error('Job polling error:', err);
@@ -107,4 +131,17 @@ export function useJobPolling(active: boolean) {
       if (timerRef.current) clearInterval(timerRef.current);
     }
   }, [state.jobStatus]);
+
+  useEffect(() => {
+    const pending = pendingOutcomeRef.current;
+    if (!pending) return;
+    if (pending.jobId !== state.jobId) {
+      pendingOutcomeRef.current = null;
+      return;
+    }
+    if (!presentsJobOutcome(state.stage)) return;
+    pendingOutcomeRef.current = null;
+    if (pending.outcome.error) dispatch({ type: 'SET_ERROR', error: pending.outcome.error });
+    dispatch({ type: 'SET_STAGE', stage: pending.outcome.stage });
+  }, [dispatch, state.jobId, state.stage]);
 }

@@ -1,0 +1,14 @@
+{
+  "maxSameLegInARow": 2,
+  "sets": {
+    "alternate": [
+      { "name": "alternating", "steps": ["L", "R"] }
+    ],
+    "walking": [
+      { "name": "alternating", "steps": ["L", "R", "L", "R"] },
+      { "name": "double", "steps": ["L", "L", "R", "R"] },
+      { "name": "pause", "steps": ["L", "R", "-", "L"] },
+      { "name": "mix", "steps": ["R", "L", "L", "R", "-", "R"] }
+    ]
+  }
+}

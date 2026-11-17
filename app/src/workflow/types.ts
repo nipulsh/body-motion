@@ -1,6 +1,6 @@
 import type { AnalysisResponse, JobStatusResponse, PatientSummary } from '../api/types';
 import type { ExerciseSessionStats } from '../exercise/sessionState';
-import type { Exercise, ScanCaptureMode } from '@vision';
+import type { Exercise, PoseResult, ScanCaptureMode } from '@vision';
 
 export type WorkflowStage =
   | 'welcome'
@@ -13,6 +13,8 @@ export type WorkflowStage =
   | 'mirror_exercise_session'
   | 'games_placeholder'
   | 'balance_bird_game'
+  | 'bowling_game'
+  | 'rehab_games'
   | 'dashboard'
   | 'patients'
   | 'add_patient'
@@ -33,6 +35,8 @@ export interface CapturedImage {
   blob: Blob;
   angleDeg: number;
   timestamp: number;
+  /** Pose on this frame, used for the objective posture measurements sent with the scan. */
+  pose?: PoseResult;
 }
 
 /** `job` posts /api/jobs/:id/retry. `recapture` returns to retryStage and does not resume the stored job. */

@@ -22,11 +22,42 @@ export interface PoseLandmark {
   presence?: number;
 }
 
+/**
+ * Person mask from the pose model, covering the whole camera frame (not mirrored).
+ * Row-major, 0 = background, 255 = person. Width / height matches the frame aspect.
+ */
+export interface PoseSilhouette {
+  width: number;
+  height: number;
+  data: Uint8Array;
+}
+
+export interface PoseSpinePoint {
+  /** Normalized image coordinates, like a pose landmark. Not mirrored. */
+  x: number;
+  y: number;
+  /** SimCC peak value. Not a probability: it runs above 1 on a clear view. */
+  score: number;
+}
+
+/** Spine keypoints from the SpinePose model, pelvis to skull. See `spine/spineTrack.ts` for the order. */
+export interface PoseSpine {
+  points: PoseSpinePoint[];
+  /** Timestamp of the video frame these came from. The model runs behind the pose, so it can be older. */
+  capturedAt: number;
+}
+
 export interface PoseResult {
   landmarks: PoseLandmark[];
   worldLandmarks?: PoseLandmark[];
   confidence: number;
   timestamp: number;
+  /** Source frame width / height. Image x and y are normalized to different pixel spans, so angles need it. */
+  frameAspect?: number;
+  /** Present only while a check that reads the body outline (deadlift back shape) has asked for it. */
+  silhouette?: PoseSilhouette;
+  /** Present once the spine model has a recent result for a check that asked for it. */
+  spine?: PoseSpine;
 }
 
 export interface PoseMetrics {
@@ -146,11 +177,27 @@ export interface CapturedFrame {
   height: number;
 }
 
+/** Which view the guided analysis capture is on: facing the camera, turned right, then the back. */
+export type CaptureStageId = 'front' | 'right' | 'back';
+
+/**
+ * Where the guided capture is: taking frames (`capture`), asking the user to turn (`turn`), or
+ * counting down before the next frames (`count`, with `count` = 3, 2, 1). For `turn` and `count`,
+ * `stage` is the view that is about to be captured.
+ */
+export interface CaptureStep {
+  stage: CaptureStageId;
+  phase: 'capture' | 'turn' | 'count';
+  count: number | null;
+}
+
 export interface CapturedScanImage {
   blob: Blob;
   angleDeg: number;
   timestamp: number;
   quality: number;
+  /** Pose detected on this frame, when available; feeds the objective posture measurements. */
+  pose?: PoseResult;
 }
 
 export interface ScanResult {

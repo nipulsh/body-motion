@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { hinge } from '../test/deadliftHinge';
+import { POSE_LANDMARK_INDEX } from './landmarks';
 import {
   calculateJointAngles,
   JointAngleCalculator,
@@ -156,6 +158,49 @@ describe('calculateJointAngles', () => {
     if (!reading.available) {
       expect(reading.reason).toBe('LANDMARK_CONFUSION');
     }
+  });
+});
+
+describe('spine angle from a side view', () => {
+  it('uses the visible side when the far shoulder, hip, and knee are not seen', () => {
+    const standing = calculateJointAngles(hinge({ leanDeg: 6 })).joints.spine;
+    const hinged = calculateJointAngles(hinge({ leanDeg: 70 })).joints.spine;
+    expect(standing.available).toBe(true);
+    expect(hinged.available).toBe(true);
+    if (standing.available && hinged.available) {
+      expect(standing.angle).toBeGreaterThan(150);
+      expect(hinged.angle).toBeLessThan(standing.angle);
+      expect(hinged.angle).toBeGreaterThan(70);
+    }
+  });
+
+  it('accepts a partly hidden side when presence stays high', () => {
+    const pose = hinge({ leanDeg: 40 });
+    for (const name of ['leftShoulder', 'leftHip', 'leftKnee'] as const) {
+      const mark = pose.landmarks[POSE_LANDMARK_INDEX[name]]!;
+      mark.visibility = 0.35;
+      mark.presence = 0.9;
+    }
+    const reading = calculateJointAngles(pose).joints.spine;
+    expect(reading.available).toBe(true);
+  });
+
+  it('keeps the last spine angle through a short dropout and drops it after the hold', () => {
+    const calculator = new JointAngleCalculator();
+    const seen = hinge({ leanDeg: 40 });
+    seen.timestamp = 0;
+    const first = calculator.calculate(seen).joints.spine;
+    expect(first.available).toBe(true);
+
+    const hidden = hinge({ leanDeg: 48, hideKnee: true });
+    hidden.timestamp = 200;
+    const held = calculator.calculate(hidden).joints.spine;
+    expect(held.available).toBe(true);
+    if (first.available && held.available) expect(held.angle).toBe(first.angle);
+
+    hidden.timestamp = 700;
+    const expired = calculator.calculate(hidden).joints.spine;
+    expect(expired.available).toBe(false);
   });
 });
 

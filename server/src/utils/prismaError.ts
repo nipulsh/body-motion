@@ -71,6 +71,9 @@ export function mapPrismaError(err: unknown): AppError | null {
     if (err.code === 'P1001' || err.code === 'P1002' || err.code === 'P1017') {
       return AppError.databaseUnavailable('Cannot reach the database.');
     }
+    if (err.code === 'P2028') {
+      return AppError.databaseUnavailable('Database is responding slowly. Please retry.');
+    }
     if (err.code === 'P2022') {
       return AppError.databaseUnavailable('Database schema is out of date. Apply pending migrations.');
     }

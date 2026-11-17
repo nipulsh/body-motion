@@ -42,12 +42,13 @@ export async function createPatientForHospital(
   hospitalId: string,
   input: CreatePatientInput,
 ): Promise<Patient> {
-  return prisma.$transaction(async (tx) => {
-    const patient = await tx.patient.create({ data: input });
-    await tx.hospitalPatient.create({
-      data: { hospitalId, patientId: patient.id },
-    });
-    return patient;
+  // Single nested write: atomic without an interactive transaction, so slow
+  // round trips to the remote DB can't hit Prisma's transaction timeout.
+  return prisma.patient.create({
+    data: {
+      ...input,
+      hospitalLinks: { create: { hospitalId } },
+    },
   });
 }
 

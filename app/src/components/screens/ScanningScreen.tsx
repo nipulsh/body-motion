@@ -180,7 +180,7 @@ export function ScanningScreen() {
     if (!guidance) return;
     let text = guidanceToCopy(guidance);
     if (isTimedBurst && guidance === 'READY') {
-      text = 'Stand still and face the camera. Capturing for 8 seconds.';
+      text = 'Stand straight and still, facing the camera. We will ask you to turn right, then to turn your back to the camera.';
     }
     if (isTimedBurst && guidance === 'SCAN_COMPLETE') {
       text = 'Capture complete.';
@@ -212,7 +212,7 @@ export function ScanningScreen() {
     for (const img of result.images) {
       dispatch({
         type: 'ADD_CAPTURE',
-        image: { blob: img.blob, angleDeg: img.angleDeg, timestamp: img.timestamp },
+        image: { blob: img.blob, angleDeg: img.angleDeg, timestamp: img.timestamp, pose: img.pose },
       });
     }
     cancel();

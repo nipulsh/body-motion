@@ -5,6 +5,13 @@ export function hedgedLikelihood(likelihood: number): string {
   return 'Uncertain — consider clinical correlation';
 }
 
+/** Share of the posture deformity attributed to one muscle, e.g. "32.5% of deformity". */
+export function formatContribution(percent: number): string {
+  const rounded = Math.round(percent * 10) / 10;
+  const text = Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+  return `${text}% of deformity`;
+}
+
 export function formatJobStatusLabel(status: string): string {
   switch (status) {
     case 'QUEUED':

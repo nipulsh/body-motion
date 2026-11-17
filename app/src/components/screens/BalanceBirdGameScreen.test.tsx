@@ -20,6 +20,8 @@ vi.mock('../../hooks/useBalanceBirdGame', () => ({
     balance: { balanced: false, supportLeg: 'none', confidence: 0, detail: 'no_pose' },
     points: 2,
     cameraError: null,
+    cameraTurn: 270,
+    pictureAspect: 9 / 16,
   }),
 }));
 
@@ -66,5 +68,18 @@ describe('BalanceBirdGameScreen', () => {
     const exit = container.querySelector<HTMLButtonElement>('[data-testid="mirror-game-exit"]');
     act(() => exit?.click());
     expect(dispatch).toHaveBeenCalledWith({ type: 'SET_STAGE', stage: 'mirror_home' });
+  });
+
+  it('shows the camera picture upright and mirrored on the portrait stage, filling the height', () => {
+    act(() => {
+      root.render(<BalanceBirdGameScreen />);
+    });
+    const stage = container.querySelector('[data-testid="mirror-game-stage"]')!;
+    expect(stage.className).toContain('[container-type:size]');
+    const video = stage.querySelector('video')!;
+    expect(video.getAttribute('data-camera-turn')).toBe('270');
+    expect(video.style.transform).toBe('translate(-50%, -50%) scaleX(-1) rotate(270deg)');
+    expect(video.className).not.toContain('object-contain');
+    expect(video.className).not.toContain('inset-0');
   });
 });

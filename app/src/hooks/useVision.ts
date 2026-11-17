@@ -113,6 +113,7 @@ export function useVision() {
     visionErrorMessage,
     lastEvent: snapshot.lastEvent,
     debugRotation: snapshot.debugRotation,
+    captureStep: snapshot.captureStep,
     devices,
     attachVideo,
     attachStreamToVideo,

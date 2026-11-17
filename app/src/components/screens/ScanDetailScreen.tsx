@@ -34,6 +34,8 @@ import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Progress } from '../ui/progress';
+import { analysisWasPossible, DeformityList } from '../analysis/DeformityList';
+import { MeasurementConflictNotice, MuscleContribution } from '../analysis/MuscleContribution';
 
 const PROCESSING_STATUSES = new Set([
   'PROCESSING',
@@ -300,7 +302,8 @@ export function ScanDetailScreen() {
   const isProcessing = isOnline && PROCESSING_STATUSES.has(scan.status);
   const canProcess = isOnline && scan.status === 'UPLOADED';
   const canRetry = isOnline && scan.status === 'FAILED';
-  const canViewAnalysis = isOnline && Boolean(analysis) && Boolean(job?.id);
+  const analysisPossible = analysis ? analysisWasPossible(analysis) : true;
+  const canViewAnalysis = isOnline && Boolean(analysis) && analysisPossible && Boolean(job?.id);
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-8">
@@ -427,27 +430,37 @@ export function ScanDetailScreen() {
             <p className="text-sm text-muted-foreground">{OFFLINE_ASSET_UNAVAILABLE}</p>
           ) : analysis ? (
             <>
+              {analysisPossible ? null : (
+                <p className="text-sm font-medium">This scan could not be analysed</p>
+              )}
               <p className="text-sm">{analysis.summary}</p>
-              <p className="text-sm text-muted-foreground">
-                {analysis.bodyRegion} · {analysis.observedDeformation}
-              </p>
-              {scan.status !== 'COMPLETED' ? (
+              {analysisPossible ? (
+                <p className="text-sm text-muted-foreground">
+                  {analysis.bodyRegion} · {analysis.observedDeformation}
+                </p>
+              ) : null}
+              <MeasurementConflictNotice conflict={analysis.measurementConflict} />
+              {analysisPossible && scan.status !== 'COMPLETED' ? (
                 <p className="text-sm text-muted-foreground">
                   The 3D model is still being built. This analysis is ready to review.
                 </p>
               ) : null}
+              <DeformityList deformities={analysis.deformities} />
               <ul className="space-y-2">
                 {analysis.muscles.map((muscle, index) => (
                   <li key={`${muscle.name}-${index}`} className="rounded-lg border px-3 py-2">
                     <p className="text-sm font-medium">{muscle.name}</p>
                     <p className="text-sm text-primary">{hedgedLikelihood(muscle.likelihood)}</p>
+                    <MuscleContribution percent={muscle.contributionPercent} />
                     <p className="text-sm text-muted-foreground">{muscle.reason}</p>
                   </li>
                 ))}
               </ul>
-              <Button type="button" variant="outline" disabled={actionLoading} onClick={() => void openAnalysis()}>
-                Open full results
-              </Button>
+              {analysisPossible ? (
+                <Button type="button" variant="outline" disabled={actionLoading} onClick={() => void openAnalysis()}>
+                  Open full results
+                </Button>
+              ) : null}
             </>
           ) : isProcessing ? (
             <p className="text-sm text-muted-foreground">Analysis will appear when the scan has been read.</p>
@@ -459,7 +472,7 @@ export function ScanDetailScreen() {
         </CardContent>
       </Card>
 
-      {analysis ? (
+      {analysis && analysisPossible ? (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">

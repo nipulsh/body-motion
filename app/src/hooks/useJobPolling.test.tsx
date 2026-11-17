@@ -27,6 +27,7 @@ vi.mock('../api/jobs', () => ({
 const analysis: AnalysisResponse = {
   bodyRegion: 'Upper body',
   observedDeformation: 'Mild',
+  affectedSide: 'bilateral',
   summary: 'Shoulder elevation differs between sides.',
   muscles: [],
 };
@@ -151,6 +152,22 @@ describe('useJobPolling', () => {
         retryKind: 'job',
       }),
     });
+  });
+
+  it('keeps the current screen when analysis finishes away from the progress page', async () => {
+    workflow.state = {
+      ...workflow.state,
+      stage: 'mirror_home',
+    };
+    vi.mocked(getJob).mockResolvedValue(jobStatus('COMPLETED'));
+    vi.mocked(getAnalysis).mockResolvedValue(analysis);
+
+    await renderPolling();
+
+    expect(workflow.dispatch).toHaveBeenCalledWith({ type: 'SET_ANALYSIS', analysis });
+    expect(workflow.dispatch).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'SET_STAGE' }),
+    );
   });
 
   it('shows clinical results when the model url is null', async () => {

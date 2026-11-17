@@ -1,13 +1,17 @@
 import { useCallback, useEffect, useRef } from 'react';
-import type { RepPhase } from '@vision';
+import type { FormFaultCode, RepPhase } from '@vision';
 import {
   coachingForCountdownStep,
   coachingForExerciseTransition,
+  coachingForFormFault,
   coachingForPositioning,
+  coachingForRangeRep,
   coachingForRepPhase,
   coachingForRestEnding,
   coachingForRestStarted,
+  coachingForViewPrompt,
   createCoachingThrottleState,
+  createFormCoachingState,
   type CoachingDecision,
 } from '../exercise/exerciseVoiceCoaching';
 import type { CountdownStep } from '../exercise/sessionState';
@@ -16,6 +20,7 @@ import { useVoiceInstructions } from './useVoiceInstructions';
 export function useExerciseVoiceCoaching(voiceEnabled: boolean) {
   const { speak, cancel } = useVoiceInstructions(voiceEnabled);
   const throttleRef = useRef(createCoachingThrottleState());
+  const formThrottleRef = useRef(createFormCoachingState());
   const previousPhaseRef = useRef<RepPhase | null>(null);
 
   useEffect(() => {
@@ -56,9 +61,14 @@ export function useExerciseVoiceCoaching(voiceEnabled: boolean) {
     [deliver],
   );
 
+  /** `silent` tracks the phase without speaking, so the next rep count is not mistaken for a repeat. */
   const speakRepPhase = useCallback(
-    (phase: RepPhase | null, repCount = 0) => {
+    (phase: RepPhase | null, repCount = 0, silent = false) => {
       if (!phase) return;
+      if (silent) {
+        previousPhaseRef.current = phase;
+        return;
+      }
       const result = coachingForRepPhase(
         phase,
         previousPhaseRef.current,
@@ -73,6 +83,15 @@ export function useExerciseVoiceCoaching(voiceEnabled: boolean) {
     [deliver],
   );
 
+  const speakFormFault = useCallback(
+    (fault: FormFaultCode | null) => {
+      const result = coachingForFormFault(fault, Date.now(), formThrottleRef.current);
+      formThrottleRef.current = result.state;
+      deliver(result.decision);
+    },
+    [deliver],
+  );
+
   const speakPositioning = useCallback(
     (message: string) => {
       deliver(coachingForPositioning(message));
@@ -80,9 +99,26 @@ export function useExerciseVoiceCoaching(voiceEnabled: boolean) {
     [deliver],
   );
 
+  /** Squat or lunge model: say how a judged rep went. */
+  const speakRangeRep = useCallback(
+    (voiceText: string, attempt: number) => {
+      deliver(coachingForRangeRep(voiceText, attempt));
+    },
+    [deliver],
+  );
+
+  /** Squat or lunge model: ask the patient to turn for this set's view. */
+  const speakViewPrompt = useCallback(
+    (voiceText: string) => {
+      deliver(coachingForViewPrompt(voiceText));
+    },
+    [deliver],
+  );
+
   const resetPhaseTracking = useCallback(() => {
     previousPhaseRef.current = null;
     throttleRef.current = createCoachingThrottleState();
+    formThrottleRef.current = createFormCoachingState();
   }, []);
 
   return {
@@ -91,7 +127,10 @@ export function useExerciseVoiceCoaching(voiceEnabled: boolean) {
     speakRestEnding,
     speakExerciseTransition,
     speakRepPhase,
+    speakFormFault,
     speakPositioning,
+    speakRangeRep,
+    speakViewPrompt,
     resetPhaseTracking,
     cancel,
   };

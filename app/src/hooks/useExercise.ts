@@ -8,7 +8,10 @@ import {
   type ExerciseFramePayload,
   type PoseResult,
   type RepDetectionResult,
+  type ExerciseFormResult,
+  type RangeView,
 } from '@vision';
+import { installNeutralSpineSessionStore } from '../exercise/neutralSpineSession';
 import { PATIENT_ERRORS } from '../exercise/patientFeedback';
 import { useVision } from './useVision';
 
@@ -17,12 +20,16 @@ export interface UseExerciseOptions {
   cameraEnabled: boolean;
   trackingEnabled: boolean;
   exercise: Exercise | null;
+  /** Squat and lunge models: the view this set is judged in. */
+  formView?: RangeView | null;
   onFrame?: (payload: ExerciseFramePayload) => void;
 }
 
 export interface UseExerciseResult {
   pose: PoseResult | null;
   repResult: RepDetectionResult | null;
+  /** Form analysis (squat, lunge) for exercises with `formCheck`; null otherwise. */
+  form: ExerciseFormResult | null;
   diagnostics: ExerciseFrameDiagnostics | null;
   cameraReady: boolean;
   poseReady: boolean;
@@ -42,12 +49,14 @@ export function useExercise({
   cameraEnabled,
   trackingEnabled,
   exercise,
+  formView = null,
   onFrame,
 }: UseExerciseOptions): UseExerciseResult {
   const manager = getVisionManager();
   const { attachVideo, attachStreamToVideo, startCamera, stopCamera } = useVision();
   const [pose, setPose] = useState<PoseResult | null>(null);
   const [repResult, setRepResult] = useState<RepDetectionResult | null>(null);
+  const [form, setForm] = useState<ExerciseFormResult | null>(null);
   const [diagnostics, setDiagnostics] = useState<ExerciseFrameDiagnostics | null>(null);
   const [cameraReady, setCameraReady] = useState(false);
   const [poseReady, setPoseReady] = useState(false);
@@ -63,14 +72,24 @@ export function useExercise({
   }, [exercise, manager]);
 
   useEffect(() => {
+    installNeutralSpineSessionStore();
+  }, []);
+
+  useEffect(() => {
     manager.setExerciseTrackingEnabled(trackingEnabled);
   }, [manager, trackingEnabled]);
+
+  // Kept by the form monitor across sessions, so it can be set before the camera starts.
+  useEffect(() => {
+    manager.setExerciseFormView(formView);
+  }, [formView, manager]);
 
   useEffect(() => {
     if (!cameraEnabled || !exercise) {
       manager.stopExerciseSession();
       setPose(null);
       setRepResult(null);
+      setForm(null);
       setDiagnostics(null);
       setPoseReady(false);
       setCameraReady(false);
@@ -120,6 +139,7 @@ export function useExercise({
     const unsubscribe = manager.subscribeExerciseFrame((payload) => {
       setPose(payload.pose);
       setRepResult(payload.result);
+      setForm(payload.form ?? null);
       setDiagnostics(payload.diagnostics ?? null);
       onFrameRef.current?.(payload);
     });
@@ -147,6 +167,7 @@ export function useExercise({
   return {
     pose,
     repResult,
+    form,
     diagnostics,
     cameraReady,
     poseReady,

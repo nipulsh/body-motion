@@ -8,7 +8,12 @@ import {
   releaseSharedHandDetector,
   retainSharedHandDetector,
 } from '@vision/hand/sharedHandDetector';
-import { findMirrorGestureTargetAt } from '@vision/hand/gestureTargets';
+import {
+  clearMirrorGestureHover,
+  findMirrorGestureTargetAt,
+  syncMirrorGestureHover,
+} from '@vision/hand/gestureTargets';
+import { HandVideoReader, keepVideoPlaying } from '@vision/hand/handVideoReader';
 import { FistClickGate, isFistGesture, PrimaryHandTracker } from '@vision/hand/fistGesture';
 import { handPointToViewport, palmCenter } from '@vision/hand/handPointer';
 import { PinchManipulator, pinchDragToViewport } from '@vision/hand/pinchGesture';
@@ -23,6 +28,8 @@ export interface MirrorHandPointer {
   x: number;
   y: number;
   visible: boolean;
+  /** True when the pointer sits over an enabled fist-selectable button. */
+  overTarget: boolean;
 }
 
 export interface UseSmartMirrorHandNavigationResult {
@@ -36,6 +43,8 @@ const CAMERA_RETRY_MS = 450;
 const ERROR_RECOVERY_MS = 3000;
 /** 1 follows the palm instantly; lower values damp jitter from the extra gain. */
 const POINTER_FOLLOW = 0.58;
+/** A hand missing this long was lowered, which re-arms fist clicks; shorter gaps are tracking dropouts. */
+const NO_HAND_REARM_MS = 500;
 
 /** Off-screen but full resolution so decoders and MediaPipe receive real frames. */
 const HIDDEN_VIDEO_CLASS =
@@ -87,11 +96,16 @@ const POST_RESET_SETTLE_MS = 350;
 /**
  * Shared-camera hand navigation for mirror menus.
  * Uses VisionManager retain/release; does not start pose preview or a second stream.
+ *
+ * During the live mirror exercise session, `landmarksFromExerciseBus` reads hands
+ * from `useWireframeHandTracking` instead of competing for the HandLandmarker or
+ * rebinding the shared camera to a hidden video element.
  */
 export function useSmartMirrorHandNavigation(
   rootElement: HTMLElement | null,
   enabled = true,
   hardResetGeneration = 0,
+  landmarksFromExerciseBus = false,
 ): UseSmartMirrorHandNavigationResult {
   const [pointer, setPointer] = useState<MirrorHandPointer | null>(null);
   const [status, setStatus] = useState<UseSmartMirrorHandNavigationResult['status']>('idle');
@@ -104,6 +118,8 @@ export function useSmartMirrorHandNavigation(
   const pinchLockedRef = useRef(false);
   const consumedHardResetGenerationRef = useRef(0);
   const smoothedPointerRef = useRef<{ x: number; y: number } | null>(null);
+  const noHandSinceRef = useRef<number | null>(null);
+  const handHoverTargetRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     if (!enabled || !rootElement) {
@@ -116,15 +132,19 @@ export function useSmartMirrorHandNavigation(
 
     const root = rootElement;
     const manager = getVisionManager();
-    const detector = retainSharedHandDetector();
+    const busOnly = landmarksFromExerciseBus;
+    const detector = busOnly ? null : retainSharedHandDetector();
+    const reader = busOnly ? null : new HandVideoReader();
     let processorToken: symbol | null = null;
-    const video = document.createElement('video');
-    video.muted = true;
-    video.playsInline = true;
-    video.autoplay = true;
-    video.setAttribute('aria-hidden', 'true');
-    video.className = HIDDEN_VIDEO_CLASS;
-    root.appendChild(video);
+    const video = busOnly ? null : document.createElement('video');
+    if (video) {
+      video.muted = true;
+      video.playsInline = true;
+      video.autoplay = true;
+      video.setAttribute('aria-hidden', 'true');
+      video.className = HIDDEN_VIDEO_CLASS;
+      root.appendChild(video);
+    }
 
     let cancelled = false;
     let rafId = 0;
@@ -132,6 +152,7 @@ export function useSmartMirrorHandNavigation(
     let recoveryTimer = 0;
 
     const releaseCameraBinding = () => {
+      if (!video) return;
       if (ownedCamera) {
         manager.stopCamera();
         ownedCamera = false;
@@ -159,42 +180,43 @@ export function useSmartMirrorHandNavigation(
       });
     };
 
-    const loop = async () => {
-      if (!detector.isReady()) return;
-      const now = performance.now();
-      if (processorToken && !holdsHandProcessor(processorToken)) processorToken = null;
-      if (!processorToken) processorToken = claimHandProcessor();
-      let hands: readonly { landmarks: readonly { x: number; y: number }[] }[] | null = null;
-      if (processorToken && holdsHandProcessor(processorToken)) {
-        const result = video.readyState >= 2 ? detector.processFrame(video, now) : null;
-        // An unreadable frame is not a lost hand. Keep the pointer and the fist streak.
-        if (!result) return;
-        if (holdsHandProcessor(processorToken)) setTrackedHands(result.hands);
-        hands = result.hands;
-      } else {
-        hands = getTrackedHands();
-      }
+    const processHands = (
+      hands: readonly { landmarks: readonly { x: number; y: number }[] }[],
+      now: number,
+    ) => {
       const landmarks = primaryHandRef.current.select(hands);
       if (!landmarks?.length) {
         pinchRef.current.reset();
         dragTargetRef.current = null;
         pinchLockedRef.current = false;
         smoothedPointerRef.current = null;
+        noHandSinceRef.current ??= now;
+        if (now - noHandSinceRef.current >= NO_HAND_REARM_MS) {
+          fistGateRef.current.update(false, now);
+        }
+        clearMirrorGestureHover(root);
+        handHoverTargetRef.current = null;
         setPointer(null);
         return;
       }
+      noHandSinceRef.current = null;
 
       const palm = palmCenter(landmarks);
       if (!palm) {
         pinchRef.current.reset();
         dragTargetRef.current = null;
         pinchLockedRef.current = false;
+        clearMirrorGestureHover(root);
+        handHoverTargetRef.current = null;
         smoothedPointerRef.current = null;
         setPointer(null);
         return;
       }
 
-      const frame = pinchRef.current.update(hands ?? []);
+      const fist = isFistGesture(landmarks);
+      // Drops the last pinch palm so the next pinch does not jump by the movement made during the fist.
+      if (fist) pinchRef.current.reset();
+      const frame = fist ? { pinching: false, palm: null, drag: null, zoom: null } : pinchRef.current.update(hands);
       const aim = frame.pinching && frame.palm ? frame.palm : palm;
       const mapped = handPointToViewport(aim, window.innerWidth, window.innerHeight, {
         mirrorX: true,
@@ -208,7 +230,9 @@ export function useSmartMirrorHandNavigation(
         : mapped;
       smoothedPointerRef.current = pointer;
 
-      setPointer({ x: pointer.x, y: pointer.y, visible: true });
+      const hovered = syncMirrorGestureHover(root, pointer.x, pointer.y, handHoverTargetRef.current);
+      handHoverTargetRef.current = hovered;
+      setPointer({ x: pointer.x, y: pointer.y, visible: true, overTarget: hovered != null });
 
       if (!frame.pinching) {
         pinchLockedRef.current = false;
@@ -229,14 +253,39 @@ export function useSmartMirrorHandNavigation(
         getMirrorModelControl()?.zoomBy(frame.zoom);
       }
 
-      const fist = !frame.pinching && isFistGesture(landmarks);
-      if (fistGateRef.current.update(fist, now)) {
+      if (fist && fistGateRef.current.update(true, now)) {
         const target = findMirrorGestureTargetAt(root, pointer.x, pointer.y);
         target?.click();
+      } else if (!fist) {
+        fistGateRef.current.update(false, now);
       }
     };
 
+    const loop = async () => {
+      const now = performance.now();
+      if (busOnly) {
+        processHands(getTrackedHands(), now);
+        return;
+      }
+      if (!detector?.isReady() || !video || !reader) return;
+      if (processorToken && !holdsHandProcessor(processorToken)) processorToken = null;
+      if (!processorToken) processorToken = claimHandProcessor();
+      let hands: readonly { landmarks: readonly { x: number; y: number }[] }[] = [];
+      if (processorToken && holdsHandProcessor(processorToken)) {
+        keepVideoPlaying(video);
+        const result = video.readyState >= 2 ? reader.read(detector, video, now) : null;
+        // An unreadable frame is not a lost hand. Keep the pointer and the fist streak.
+        if (!result) return;
+        if (holdsHandProcessor(processorToken)) setTrackedHands(result.hands);
+        hands = result.hands;
+      } else {
+        hands = getTrackedHands();
+      }
+      processHands(hands, now);
+    };
+
     const tryAcquireCamera = async (): Promise<boolean> => {
+      if (!video) return false;
       releaseCameraBinding();
       ownedCamera = false;
 
@@ -262,6 +311,11 @@ export function useSmartMirrorHandNavigation(
     const start = async () => {
       setStatus('starting');
       setError(null);
+      if (busOnly) {
+        setStatus('ready');
+        tick();
+        return;
+      }
       if (hardResetGeneration > consumedHardResetGenerationRef.current) {
         manager.resetCameraSession();
         consumedHardResetGenerationRef.current = hardResetGeneration;
@@ -282,7 +336,7 @@ export function useSmartMirrorHandNavigation(
           }
 
           if (cancelled) return;
-          await detector.initialize();
+          await detector!.initialize();
           if (cancelled) return;
           setStatus('ready');
           tick();
@@ -313,20 +367,22 @@ export function useSmartMirrorHandNavigation(
       dragTargetRef.current = null;
       pinchLockedRef.current = false;
       smoothedPointerRef.current = null;
+      clearMirrorGestureHover(root);
+      handHoverTargetRef.current = null;
       if (processorToken) {
         const held = holdsHandProcessor(processorToken);
         releaseHandProcessor(processorToken);
         processorToken = null;
         if (held) setTrackedHands([]);
       }
-      releaseSharedHandDetector();
+      if (detector) releaseSharedHandDetector();
       releaseCameraBinding();
-      video.remove();
+      video?.remove();
       setPointer(null);
       setStatus('idle');
       setError(null);
     };
-  }, [enabled, hardResetGeneration, rootElement, recoveryGeneration]);
+  }, [enabled, hardResetGeneration, landmarksFromExerciseBus, rootElement, recoveryGeneration]);
 
   return { pointer, status, error };
 }

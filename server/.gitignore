@@ -19,6 +19,7 @@ Thumbs.db
 coverage/
 tmp/
 .tmp/
+storage/
 
 prisma/*.db
 prisma/*.db-journal

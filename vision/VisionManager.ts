@@ -26,12 +26,16 @@ import {
   ExerciseSessionController,
   type ExerciseFrameListener,
 } from './exercise/ExerciseSessionController';
+import type { RangeView } from './exercise/angleRangeModels';
 import type { Exercise } from './exercise/types';
 import type { RepDetectionResult } from './exercise/types';
+import { SpinePoseEstimator } from './spine/SpinePoseEstimator';
+import { createSpinePoseWorkerRunner } from './spine/spinePoseWorkerRunner';
 
 export class VisionManager {
   private readonly camera = new CameraManager();
   private readonly poseDetector = new PoseDetector();
+  private readonly spinePose = new SpinePoseEstimator({ createRunner: () => createSpinePoseWorkerRunner() });
   private readonly frameCapture = new FrameCapture();
   private readonly motionTracker = new MotionTracker();
   private readonly listeners = new Set<VisionListener>();
@@ -53,6 +57,7 @@ export class VisionManager {
       getVideo: () => this.video,
       poseDetector: this.poseDetector,
       motionTracker: this.motionTracker,
+      spinePose: this.spinePose,
     });
     this.scanController = new ScanController({
       isCameraLive: () => this.camera.isLive(),
@@ -66,6 +71,8 @@ export class VisionManager {
       getVideo: () => this.video,
       captureFrame: (video) => this.frameCapture.capture(video),
       emit: (event) => this.handleScanEvent(event, () => this.timedCaptureController.getLastError()),
+      detectPose: (video) =>
+        this.poseDetector.isReady() ? this.poseDetector.processFrame(video, performance.now()) : null,
     });
   }
 
@@ -155,6 +162,9 @@ export class VisionManager {
     this.lastError = null;
     try {
       if (this.scanCaptureMode === 'TIMED_BURST') {
+        // Posture measurements ride along when the pose model is (or becomes) ready;
+        // the burst itself never waits for it.
+        void this.poseDetector.initialize().catch(() => undefined);
         await this.timedCaptureController.start();
       } else {
         await this.scanController.start();
@@ -210,6 +220,7 @@ export class VisionManager {
         error: this.lastError,
         lastEvent: this.lastEvent,
         debugRotation: null,
+        captureStep: timed.captureStep,
       };
     }
 
@@ -229,6 +240,7 @@ export class VisionManager {
       error: this.lastError,
       lastEvent: this.lastEvent,
       debugRotation: scan.debugRotation,
+      captureStep: null,
     };
   }
 
@@ -304,6 +316,11 @@ export class VisionManager {
     this.exerciseSession.setTrackingEnabled(enabled);
   }
 
+  /** Squat and lunge models: judge this set side on (knee, back, ankle) or face on (tibia). */
+  setExerciseFormView(view: RangeView | null): void {
+    this.exerciseSession.setRequiredFormView(view);
+  }
+
   isExerciseTrackingEnabled(): boolean {
     return this.exerciseSession.isTrackingEnabled();
   }
@@ -342,6 +359,11 @@ export class VisionManager {
     this.posePreview.stop();
   }
 
+  /** Pose preview frame rate override for games that need more samples (null = default). */
+  setPosePreviewFps(fps: number | null): void {
+    this.posePreview.setFps(fps);
+  }
+
   subscribePosePreview(listener: PosePreviewListener): () => void {
     return this.posePreview.subscribe(listener);
   }
@@ -352,6 +374,7 @@ export class VisionManager {
     this.scanController.dispose();
     this.timedCaptureController.dispose();
     this.poseDetector.dispose();
+    this.spinePose.dispose();
     this.frameCapture.dispose();
     this.motionTracker.reset();
     this.camera.stopNow();

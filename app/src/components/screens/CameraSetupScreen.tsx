@@ -112,7 +112,7 @@ export function CameraSetupScreen() {
         title="Camera setup"
         description={
           isTimedBurst
-            ? 'Center the patient, full body visible. The next step records 8 seconds at 10 frames per second.'
+            ? 'Center the patient, full body visible. The next step takes 10 pictures facing the camera, then 10 turned right and 10 with the back to the camera.'
             : 'Position the patient centered, full body visible, with even lighting.'
         }
       />

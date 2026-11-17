@@ -27,8 +27,10 @@ import { AppError, toErrorMessage } from '../../utils/AppError';
 import { apiSideToPrisma } from '../../utils/bodySide';
 import { assertNever } from '../../utils/exhaustive';
 import { geminiAnalysisSchema } from '../../schemas/analysis.schema';
+import { sanitizePostureMetrics } from '../../config/postureMetricRules';
 import { toInputJson } from '../../utils/json';
 import { logger } from '../../utils/logger';
+import { analysisPossibleOf } from '../../utils/muscleContribution';
 import {
   buildGeminiAnalysisInputs,
   selectGeminiAnalysisFrameIndexes,
@@ -55,6 +57,8 @@ function scanTypeFromJob(job: JobWithRelations): ScanType {
 
 export function determineStartStep(job: JobWithRelations): PipelineStep | null {
   if (!job.analysisResult) return 'ANALYSIS';
+  // A capture that could not be analysed has nothing to build a body model from.
+  if (!analysisPossibleOf(job.analysisResult.parsed)) return null;
 
   if (!env.meshyEnabled) {
     return null;
@@ -156,7 +160,9 @@ async function runAnalysisStep(job: JobWithRelations): Promise<void> {
       : undefined,
   );
 
-  const result = await runGeminiAnalysis(inputs);
+  // Re-sanitised here too, so payloads stored before server-side rebuilding are never trusted.
+  const posture = sanitizePostureMetrics(job.scan?.postureMetrics ?? null);
+  const result = await runGeminiAnalysis(inputs, posture);
 
   await saveAnalysisResult({
     jobId: job.id,
@@ -174,6 +180,7 @@ async function runAnalysisStep(job: JobWithRelations): Promise<void> {
       deformation: muscle.deformation,
       intensity: muscle.intensity,
       reason: muscle.reason,
+      contributionPercent: muscle.contributionPercent,
       bodyExplorerId: muscle.bodyExplorerId,
       bodyExplorerMeshNames: muscle.bodyExplorerMeshNames,
     })),
@@ -404,6 +411,13 @@ export async function processAnalysisJob(jobId: string): Promise<void> {
         throw new AppError('PIPELINE_ERROR', 'Job disappeared during pipeline execution.', 500);
       }
       await runStep(latestJob, step);
+      if (step === 'ANALYSIS') {
+        const analysed = await findJobWithRelations(jobId);
+        if (analysed?.analysisResult && !analysisPossibleOf(analysed.analysisResult.parsed)) {
+          logger.info('Capture could not be analysed; skipping the remaining steps', { jobId });
+          break;
+        }
+      }
     } catch (error: unknown) {
       const message = toErrorMessage(error);
       logger.error('Pipeline step failed', { jobId, step, message });

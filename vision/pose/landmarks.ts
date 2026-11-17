@@ -46,3 +46,15 @@ export function getLandmark(
 ): PoseLandmark | undefined {
   return landmarks[POSE_LANDMARK_INDEX[name]];
 }
+
+/**
+ * Seen in the camera. Visibility is the occlusion score. Presence can keep a partly
+ * hidden point (a side-view hip the model is still tracking) without treating a
+ * point that has almost no visibility as on screen.
+ */
+export function landmarkSeen(landmark: PoseLandmark | undefined, minVisibility: number): boolean {
+  if (!landmark || !Number.isFinite(landmark.x) || !Number.isFinite(landmark.y)) return false;
+  if (landmark.visibility >= minVisibility) return true;
+  const presence = landmark.presence ?? 0;
+  return presence >= minVisibility && landmark.visibility >= minVisibility * 0.6;
+}

@@ -72,6 +72,11 @@ export default defineConfig(() => ({
         __dirname,
         "node_modules/@mediapipe/tasks-vision/vision_bundle.mjs",
       ),
+      // Imported from ../vision, which has no node_modules of its own.
+      "onnxruntime-web/webgpu": path.resolve(
+        __dirname,
+        "node_modules/onnxruntime-web/dist/ort.webgpu.bundle.min.mjs",
+      ),
     },
   },
   optimizeDeps: {

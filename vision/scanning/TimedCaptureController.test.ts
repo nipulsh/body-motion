@@ -1,9 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { VISION_CONFIG } from '../config';
-import type { CapturedFrame } from '../types';
+import type { CapturedFrame, CaptureStep } from '../types';
 import { TimedCaptureController } from './TimedCaptureController';
 
-const { frameCount, frameIntervalMs, durationMs } = VISION_CONFIG.timedCapture;
+const cfg = VISION_CONFIG.timedCapture;
+const { frameCount, frameIntervalMs, framesPerStage } = cfg;
+const turnGapMs = cfg.turnPromptMs + cfg.countdownFrom * cfg.countdownStepMs;
+const stageMs = framesPerStage * frameIntervalMs;
+/** Every stage's frames plus the turn prompt and count between stages. */
+const durationMs = cfg.stages.length * stageMs + (cfg.stages.length - 1) * turnGapMs;
 const video = { readyState: 2, videoWidth: 640, videoHeight: 480 } as HTMLVideoElement;
 
 function frame(tag: string): CapturedFrame {
@@ -18,14 +23,22 @@ function frame(tag: string): CapturedFrame {
 // `now` reads the fake clock so advancing timers also advances the controller's deadline checks.
 function createController(captureFrame: () => Promise<CapturedFrame | null>) {
   const events: string[] = [];
+  const steps: string[] = [];
+  const holder: { controller?: TimedCaptureController } = {};
   const controller = new TimedCaptureController({
     isCameraLive: () => true,
     getVideo: () => video,
     captureFrame,
-    emit: (event) => events.push(event),
+    emit: (event) => {
+      events.push(event);
+      const step: CaptureStep | null | undefined = holder.controller?.getSnapshot().captureStep;
+      const label = step ? `${step.stage}:${step.phase}${step.count !== null ? `:${step.count}` : ''}` : null;
+      if (label && steps[steps.length - 1] !== label) steps.push(label);
+    },
     now: () => Date.now(),
   });
-  return { controller, events };
+  holder.controller = controller;
+  return { controller, events, steps };
 }
 
 describe('TimedCaptureController', () => {
@@ -38,16 +51,56 @@ describe('TimedCaptureController', () => {
     vi.useRealTimers();
   });
 
-  it('does not emit SCAN_ERROR when cancelled while the last frame encodes past the deadline', async () => {
+  it('takes 10 frames facing the camera, then asks to turn right and counts 3-2-1, then the same for left', async () => {
+    const { controller, events, steps } = createController(async () => frame('f'));
+
+    await controller.start();
+    await vi.advanceTimersByTimeAsync(durationMs + 500);
+
+    expect(events).toContain('SCAN_COMPLETED');
+    const angles = controller.getResult()?.images.map((image) => image.angleDeg);
+    expect(angles).toEqual([
+      ...Array(framesPerStage).fill(0),
+      ...Array(framesPerStage).fill(90),
+      ...Array(framesPerStage).fill(270),
+    ]);
+    expect(steps).toEqual([
+      'front:capture',
+      'right:turn',
+      'right:count:3',
+      'right:count:2',
+      'right:count:1',
+      'right:capture',
+      'left:turn',
+      'left:count:3',
+      'left:count:2',
+      'left:count:1',
+      'left:capture',
+    ]);
+    expect(controller.getSnapshot().captureStep).toBeNull();
+  });
+
+  it('takes no frames while the user is being asked to turn', async () => {
+    const { controller } = createController(async () => frame('f'));
+
+    await controller.start();
+    // Just past the front stage, inside the turn prompt.
+    await vi.advanceTimersByTimeAsync(stageMs + 100);
+    expect(controller.getSnapshot().captureStep).toMatchObject({ stage: 'right', phase: 'turn' });
+    await vi.advanceTimersByTimeAsync(turnGapMs - 500);
+    expect(controller.getSnapshot().capturedCount).toBe(framesPerStage);
+  });
+
+  it('does not emit SCAN_ERROR when cancelled while a frame encodes', async () => {
     let attempts = 0;
     const { controller, events } = createController(async () => {
       attempts += 1;
-      await new Promise((resolve) => setTimeout(resolve, attempts === frameCount ? 300 : 10));
+      await new Promise((resolve) => setTimeout(resolve, attempts === framesPerStage ? 300 : 10));
       return frame(`f${attempts}`);
     });
 
     await controller.start();
-    await vi.advanceTimersByTimeAsync((frameCount - 1) * frameIntervalMs + 50);
+    await vi.advanceTimersByTimeAsync((framesPerStage - 1) * frameIntervalMs + 50);
     controller.cancel();
     await vi.advanceTimersByTimeAsync(500);
 
@@ -83,7 +136,7 @@ describe('TimedCaptureController', () => {
     expect(contents).not.toContain('stale');
   });
 
-  it('retries a null encode at the same index and still completes with 80 frames', async () => {
+  it('retries a null encode and still completes with all frames', async () => {
     let attempts = 0;
     const { controller, events } = createController(async () => {
       attempts += 1;
@@ -94,16 +147,14 @@ describe('TimedCaptureController', () => {
     await vi.advanceTimersByTimeAsync(durationMs + 500);
 
     expect(events).toContain('SCAN_COMPLETED');
-    expect(controller.getResult()?.images.map((image) => image.angleDeg)).toEqual(
-      Array.from({ length: frameCount }, (_, index) => index),
-    );
+    expect(controller.getResult()?.images).toHaveLength(frameCount);
   });
 
-  it('fails when the deadline passes with fewer than 80 frames', async () => {
+  it('fails when a stage cannot get its frames in time', async () => {
     const { controller, events } = createController(async () => null);
 
     await controller.start();
-    await vi.advanceTimersByTimeAsync(durationMs + 500);
+    await vi.advanceTimersByTimeAsync(stageMs + cfg.stageSlackMs + 500);
 
     expect(controller.getSnapshot().scanState).toBe('error');
     expect(events).toContain('SCAN_ERROR');

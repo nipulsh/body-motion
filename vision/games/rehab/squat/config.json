@@ -1,0 +1,24 @@
+{
+  "requiredLandmarks": [11, 12, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32],
+  "speedSmoothing": 0.25,
+  "bounceMaxFlips": 2,
+  "bounceMinStep": 0.6,
+  "strictBorderlineScale": 0.5,
+  "tibiaBands": [
+    { "toeOut": [-90, 10], "range": [0, 8] },
+    { "toeOut": [10, 20], "range": [3, 12] },
+    { "toeOut": [20, 30], "range": [6, 18] },
+    { "toeOut": [30, 90], "range": [10, 24] }
+  ],
+  "tibiaBorderline": 3,
+  "pelvis": { "good": 5, "borderline": 8 },
+  "lrDiff": { "good": 5, "borderline": 10 },
+  "bowing": { "good": 10, "borderline": 15 },
+  "heelLift": { "good": 3, "borderline": 6 },
+  "angleBorderline": 5,
+  "speed": { "borderlineFaster": 0.25, "slowDownFactor": 2 },
+  "formMultiplier": { "good": 1, "borderline": 0.5, "incorrect": 0 },
+  "pointsPerFruit": 10,
+  "stars": { "one": 50, "two": 70, "three": 90, "threeFormPct": 80 },
+  "spillFallSeconds": 1.2
+}

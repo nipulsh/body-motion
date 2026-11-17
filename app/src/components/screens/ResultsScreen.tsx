@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Maximize2, Minimize2 } from 'lucide-react';
 import { BodyExplorerViewer } from '../../bodyExplorer/BodyExplorerViewer';
 import { RiggedModelViewer } from '../../bodyExplorer/RiggedModelViewer';
@@ -9,6 +9,14 @@ import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { ScrollArea } from '../ui/scroll-area';
 import { cn } from '@/lib/utils';
+import {
+  FindingNumber,
+  MeasurementConflictNotice,
+  MuscleContribution,
+  MuscleModelNote,
+} from '../analysis/MuscleContribution';
+import { analysisWasPossible, DeformityList } from '../analysis/DeformityList';
+import { useAnalysisMuscleView } from '../analysis/useAnalysisMuscleView';
 
 type ExpandedPanel = 'anatomy' | 'model' | null;
 
@@ -50,31 +58,32 @@ export function ResultsScreen() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [expanded]);
 
-  const selectedMeshes = useMemo(() => {
-    if (!analysis || state.selectedMuscleIndex === null) return [];
-    const m = analysis.muscles[state.selectedMuscleIndex];
-    if (!m) return [];
-    return m.bodyExplorerMeshNames ?? (m.bodyExplorerId ? [m.bodyExplorerId] : []);
-  }, [analysis, state.selectedMuscleIndex]);
-
-  const allHighlightMeshes = useMemo(() => {
-    if (!analysis) return [];
-    const names = new Set<string>();
-    for (const m of analysis.muscles) {
-      for (const n of m.bodyExplorerMeshNames ?? []) names.add(n);
-      if (m.bodyExplorerId) names.add(m.bodyExplorerId);
-    }
-    return [...names];
-  }, [analysis]);
-
-  const highlightMeshes =
-    selectedMeshes.length > 0 ? selectedMeshes : allHighlightMeshes;
-  const isolateSelected = state.selectedMuscleIndex !== null && selectedMeshes.length > 0;
+  const muscleView = useAnalysisMuscleView(analysis, state.selectedMuscleIndex);
+  const selectMuscle = (index: number | null) => dispatch({ type: 'SET_SELECTED_MUSCLE', index });
 
   if (!analysis) {
     return (
       <div className="p-8">
         <p className="text-sm text-muted-foreground">Loading results…</p>
+      </div>
+    );
+  }
+
+  if (!analysisWasPossible(analysis)) {
+    return (
+      <div className="p-8">
+        <PageHeader title={`Results — ${state.patientName}`} />
+        <Card className="max-w-2xl" data-testid="analysis-not-possible">
+          <CardHeader>
+            <CardTitle className="text-base">This scan could not be analysed</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col items-start gap-4">
+            <p className="text-sm">{analysis.summary}</p>
+            <Button type="button" variant="outline" onClick={() => dispatch({ type: 'SET_STAGE', stage: 'dashboard' })}>
+              Back to dashboard
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -88,6 +97,9 @@ export function ResultsScreen() {
             {analysis.summary}
             <span className="mt-1 block text-muted-foreground">
               {analysis.bodyRegion} · {analysis.observedDeformation}
+            </span>
+            <span className="mt-2 block">
+              <MeasurementConflictNotice conflict={analysis.measurementConflict} />
             </span>
           </>
         }
@@ -104,7 +116,8 @@ export function ResultsScreen() {
             <CardHeader className="px-6 pt-6">
               <CardTitle className="text-base">Anatomy map</CardTitle>
               <CardDescription>
-                Select a finding to highlight that muscle and hide surrounding muscles.
+                Click a number to zoom to that muscle and hide the others. Reset returns to the
+                full body.
               </CardDescription>
               <PanelExpandButton
                 expanded={expanded === 'anatomy'}
@@ -125,8 +138,13 @@ export function ResultsScreen() {
                   'body-explorer-canvas',
                   expanded === 'anatomy' && 'min-h-0',
                 )}
-                highlightMeshNames={highlightMeshes}
-                isolateSelected={isolateSelected}
+                highlightMeshNames={muscleView.highlightMeshes}
+                isolateSelected={muscleView.isolateSelected}
+                markers={muscleView.markers}
+                selectedMarkerIndex={state.selectedMuscleIndex}
+                focusMeshNames={muscleView.focusMeshNames}
+                onMarkerSelect={selectMuscle}
+                onResetView={() => selectMuscle(null)}
               />
             </CardContent>
           </Card>
@@ -170,6 +188,8 @@ export function ResultsScreen() {
           </CardHeader>
           <CardContent className="flex flex-col gap-3 px-6 pb-6">
             <ScrollArea className="h-[55vh] pr-3">
+              <DeformityList deformities={analysis.deformities} className="mb-4" />
+              <h2 className="mb-2 text-sm font-semibold">Contributing muscles ({analysis.muscles.length})</h2>
               <ul className="space-y-2">
                 {analysis.muscles.map((muscle, index) => (
                   <li key={`${muscle.name}-${index}`}>
@@ -179,12 +199,17 @@ export function ResultsScreen() {
                         'w-full rounded-lg border bg-background/60 px-3 py-3 text-left transition-colors hover:bg-accent',
                         state.selectedMuscleIndex === index && 'border-primary ring-1 ring-primary',
                       )}
-                      onClick={() => dispatch({ type: 'SET_SELECTED_MUSCLE', index })}
+                      onClick={() => selectMuscle(index)}
                     >
-                      <span className="block font-medium">{muscle.name}</span>
+                      <span className="flex items-center gap-2 font-medium">
+                        <FindingNumber number={index + 1} />
+                        {muscle.name}
+                      </span>
                       <span className="block text-sm text-primary">
                         {hedgedLikelihood(muscle.likelihood)}
                       </span>
+                      <MuscleContribution percent={muscle.contributionPercent} />
+                      <MuscleModelNote muscle={muscle} />
                       <span className="mt-1 block text-sm text-muted-foreground">
                         {muscle.reason}
                       </span>

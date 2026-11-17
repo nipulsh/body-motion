@@ -9,7 +9,9 @@ import {
   PoseWireframeOverlay,
   type PoseWireframeOverlayHandle,
 } from '../vision/PoseWireframeOverlay';
-import { formatMirrorRepCount } from './smartMirrorExercise';
+import { formatMirrorRepCount, mirrorPanelFollowOffset } from './smartMirrorExercise';
+import { eyeDropPx, type MirrorViewer } from '@vision/pose/mirrorReflection';
+import { useMirrorGeometry } from '../../hooks/useMirrorGeometry';
 
 export interface SmartMirrorScreenProps {
   /** When set, display this session exercise instead of the live VisionManager exercise. */
@@ -147,6 +149,9 @@ function SmartMirrorView({
 }) {
   const stroke = useMirrorStroke();
   const wireframeRef = useRef<PoseWireframeOverlayHandle>(null);
+  const mirrorGeometry = useMirrorGeometry();
+  const screenRef = useRef<HTMLElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const showSession = exerciseName != null && repCount != null && targetReps != null;
 
   useEffect(() => {
@@ -158,8 +163,21 @@ function SmartMirrorView({
     };
   }, [frameSink]);
 
+  /** Keep the exercise panel at the same height relative to the viewer's eyes as they bend. */
+  const followEyes = (viewer: MirrorViewer | null) => {
+    const screen = screenRef.current;
+    const panel = panelRef.current;
+    if (!screen || !panel) return;
+    const drop = viewer
+      ? eyeDropPx(viewer.eye, viewer.standingEyeHeightIn, mirrorGeometry, screen.clientHeight)
+      : 0;
+    const offset = mirrorPanelFollowOffset(drop, panel.offsetTop, panel.offsetHeight, screen.clientHeight);
+    panel.style.transform = offset > 0 ? `translateY(${offset}px)` : '';
+  };
+
   return (
     <section
+      ref={screenRef}
       className="smart-mirror-screen"
       style={screenStyle}
       aria-label="Smart mirror"
@@ -176,10 +194,13 @@ function SmartMirrorView({
           lineWidth={stroke.lineWidth}
           jointRadius={stroke.jointRadius}
           mirrorX
+          mirrorGeometry={mirrorGeometry}
+          onViewer={followEyes}
         />
       </div>
 
       <div
+        ref={panelRef}
         className="smart-mirror-exercise"
         style={exerciseStyle}
         data-testid="smart-mirror-exercise"

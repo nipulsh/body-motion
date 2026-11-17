@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { drawHandWireframes, HAND_WIREFRAME_SEGMENTS } from '../hand/handWireframe';
 import { blankLandmarks, setLandmark } from '../test/fixtures';
+import { recordingContext } from '../test/recordingContext';
 import {
+  cameraFrameRect,
+  clipSegmentToRect,
+  derivedSpinePoints,
   drawPoseWireframe,
   fitLandmarkToCanvas,
   mapNormalizedToContainCanvas,
@@ -143,6 +147,58 @@ describe('PoseNet stick figure', () => {
     drawPoseWireframe(ctx, landmarks);
 
     expect(arcs.map((arc) => arc.x)).toEqual([20]);
+  });
+
+  it('bows the mid-spine off the neck–pelvis line and leaves the ends put', () => {
+    const landmarks = blankLandmarks(0);
+    setLandmark(landmarks, 'leftShoulder', { x: 0.35, y: 0.3, visibility: 0.9 });
+    setLandmark(landmarks, 'rightShoulder', { x: 0.65, y: 0.3, visibility: 0.9 });
+    setLandmark(landmarks, 'leftHip', { x: 0.4, y: 0.7, visibility: 0.9 });
+    setLandmark(landmarks, 'rightHip', { x: 0.6, y: 0.7, visibility: 0.9 });
+    const shown = () => true;
+    const straight = derivedSpinePoints(landmarks, shown);
+    const bowed = derivedSpinePoints(landmarks, shown, { x: 0.12, y: 0 });
+    const at = (points: typeof straight, name: string) => points.find((point) => point.name === name)!;
+
+    expect(at(bowed, 'neck')).toMatchObject({ x: 0.5, y: 0.3 });
+    expect(at(bowed, 'pelvis')).toMatchObject({ x: 0.5, y: 0.7 });
+    expect(at(straight, 'upperSpine').x).toBeCloseTo(0.5);
+    expect(at(bowed, 'upperSpine').x).toBeGreaterThan(0.55);
+    expect(at(bowed, 'lowerSpine').x).toBeGreaterThan(0.55);
+    expect(at(bowed, 'upperSpine').y).toBeCloseTo(at(straight, 'upperSpine').y);
+
+    const { ctx, lines } = recordingContext();
+    drawPoseWireframe(ctx, landmarks, {
+      backBow: { side: 'left', offset: { x: 0.12, y: 0 } },
+      spineStrokeStyle: 'red',
+    });
+    const midSpine = lines.filter((line) => line.y1 > 35 && line.y1 < 65 && line.y2 > 35 && line.y2 < 65);
+    expect(midSpine.some((line) => line.x1 > 55 || line.x2 > 55)).toBe(true);
+  });
+
+  it('bends the hip–shoulder bone instead of drawing it straight', () => {
+    const landmarks = blankLandmarks(0);
+    setLandmark(landmarks, 'leftHip', { x: 0.35, y: 0.55, visibility: 0.9 });
+    setLandmark(landmarks, 'leftShoulder', { x: 0.55, y: 0.35, visibility: 0.9 });
+
+    const plain = recordingContext();
+    drawPoseWireframe(plain.ctx, landmarks);
+    expect(plain.lines).toHaveLength(1);
+
+    const { ctx, lines } = recordingContext();
+    drawPoseWireframe(ctx, landmarks, { backBow: { side: 'left', offset: { x: -0.06, y: -0.06 } } });
+
+    expect(lines.length).toBeGreaterThan(1);
+    expect(lines[0]!.x1).toBeCloseTo(35);
+    expect(lines[0]!.y1).toBeCloseTo(55);
+    expect(lines.at(-1)!.x2).toBeCloseTo(55);
+    expect(lines.at(-1)!.y2).toBeCloseTo(35);
+    // The straight bone's midpoint is (45, 45); the bent bone passes up and to the left of it.
+    const ends = lines.flatMap((line) => [
+      { x: line.x1, y: line.y1 },
+      { x: line.x2, y: line.y2 },
+    ]);
+    expect(ends.some((point) => point.x < 41 && point.y < 41)).toBe(true);
   });
 });
 
@@ -453,29 +509,116 @@ describe('finger wireframe', () => {
   });
 });
 
-function recordingContext(width = 100, height = 100) {
-  const lines: Array<{ x1: number; y1: number; x2: number; y2: number }> = [];
-  const arcs: Array<{ x: number; y: number; radius: number }> = [];
-  let cursor = { x: 0, y: 0 };
-  const ctx = {
-    canvas: { width, height },
-    lineCap: '',
-    lineJoin: '',
-    lineWidth: 0,
-    strokeStyle: '',
-    fillStyle: '',
-    beginPath() {},
-    moveTo(x: number, y: number) {
-      cursor = { x, y };
-    },
-    lineTo(x: number, y: number) {
-      lines.push({ x1: cursor.x, y1: cursor.y, x2: x, y2: y });
-    },
-    stroke() {},
-    arc(x: number, y: number, radius: number) {
-      arcs.push({ x, y, radius });
-    },
-    fill() {},
-  } as unknown as CanvasRenderingContext2D;
-  return { ctx, lines, arcs };
-}
+describe('camera-frame clipping', () => {
+  const frame = { x: 0, y: 0, width: 100, height: 100 };
+
+  it('keeps a segment that lies inside the frame unchanged', () => {
+    expect(clipSegmentToRect({ x: 10, y: 10 }, { x: 90, y: 50 }, frame)).toEqual([
+      { x: 10, y: 10 },
+      { x: 90, y: 50 },
+    ]);
+  });
+
+  it('cuts a segment that crosses the frame edge at the edge', () => {
+    const clipped = clipSegmentToRect({ x: 50, y: 50 }, { x: 50, y: 150 }, frame);
+    expect(clipped).toEqual([
+      { x: 50, y: 50 },
+      { x: 50, y: 100 },
+    ]);
+
+    const diagonal = clipSegmentToRect({ x: -50, y: 50 }, { x: 50, y: 50 }, frame)!;
+    expect(diagonal[0]).toEqual({ x: 0, y: 50 });
+    expect(diagonal[1]).toEqual({ x: 50, y: 50 });
+  });
+
+  it('keeps the visible middle of a segment with both ends outside', () => {
+    const clipped = clipSegmentToRect({ x: -20, y: 50 }, { x: 120, y: 50 }, frame);
+    expect(clipped).toEqual([
+      { x: 0, y: 50 },
+      { x: 100, y: 50 },
+    ]);
+  });
+
+  it('drops a segment entirely outside the frame', () => {
+    expect(clipSegmentToRect({ x: 10, y: 120 }, { x: 90, y: 160 }, frame)).toBeNull();
+    expect(clipSegmentToRect({ x: -30, y: -10 }, { x: -5, y: 90 }, frame)).toBeNull();
+    // Passes beside the corner without touching the frame.
+    expect(clipSegmentToRect({ x: 90, y: -30 }, { x: 130, y: 10 }, frame)).toBeNull();
+  });
+
+  it('uses the letterboxed camera image, not the whole canvas, as the boundary', () => {
+    // Portrait TV canvas, landscape camera: image band is 1080 x 607.5, centered.
+    const options = { fit: 'contain' as const, sourceWidth: 1280, sourceHeight: 720, mirrorX: true };
+    const band = cameraFrameRect(1080, 1920, options);
+    expect(band.x).toBe(0);
+    expect(band.width).toBe(1080);
+    expect(band.height).toBeCloseTo(607.5);
+    expect(band.y).toBeCloseTo((1920 - 607.5) / 2);
+
+    const landmarks = blankLandmarks(0);
+    setLandmark(landmarks, 'leftKnee', { x: 0.4, y: 0.8, visibility: 0.9 });
+    setLandmark(landmarks, 'leftAnkle', { x: 0.4, y: 1.3, visibility: 0.9 });
+
+    const drawn = recordingContext(1080, 1920);
+    drawPoseWireframe(drawn.ctx, landmarks, options);
+
+    expect(drawn.clips).toEqual([band]);
+    expect(drawn.lines).toHaveLength(1);
+    const shin = drawn.lines[0]!;
+    expect(shin.y1).toBeCloseTo(band.y + 0.8 * band.height);
+    expect(shin.y2).toBeCloseTo(band.y + band.height);
+    expect(shin.x1).toBeCloseTo(shin.x2);
+    // The out-of-frame ankle joint is not drawn; the in-frame knee is.
+    expect(drawn.arcs).toHaveLength(1);
+    expect(drawn.arcs[0]!.y).toBeCloseTo(band.y + 0.8 * band.height);
+  });
+
+  it('draws nothing for a limb that is fully outside the camera image', () => {
+    const options = { fit: 'contain' as const, sourceWidth: 1280, sourceHeight: 720 };
+    const landmarks = blankLandmarks(0);
+    setLandmark(landmarks, 'leftKnee', { x: 0.4, y: 1.1, visibility: 0.9 });
+    setLandmark(landmarks, 'leftAnkle', { x: 0.4, y: 1.4, visibility: 0.9 });
+
+    const drawn = recordingContext(1080, 1920);
+    drawPoseWireframe(drawn.ctx, landmarks, options);
+
+    expect(drawn.lines).toEqual([]);
+    expect(drawn.arcs).toEqual([]);
+  });
+
+  it('clips hand bones to the same camera image', () => {
+    const options = { fit: 'contain' as const, sourceWidth: 1280, sourceHeight: 720 };
+    const band = cameraFrameRect(1080, 1920, options);
+    const hand = {
+      landmarks: Array.from({ length: 21 }, (_, index) => ({
+        x: 0.5,
+        y: 0.9 + index * 0.02,
+        visibility: 1,
+      })),
+      handedness: 'Left' as const,
+    };
+
+    const drawn = recordingContext(1080, 1920);
+    drawHandWireframes(drawn.ctx, [hand], options);
+
+    expect(drawn.clips).toEqual([band]);
+    for (const line of drawn.lines) {
+      expect(line.y1).toBeLessThanOrEqual(band.y + band.height + 1e-9);
+      expect(line.y2).toBeLessThanOrEqual(band.y + band.height + 1e-9);
+    }
+    for (const arc of drawn.arcs) {
+      expect(arc.y).toBeLessThanOrEqual(band.y + band.height + 1e-9);
+    }
+    expect(drawn.arcs.length).toBeLessThan(21);
+  });
+});
+
+describe('mirrored portrait alignment', () => {
+  it('maps a mirrored landmark into the portrait letterbox', () => {
+    const options = { fit: 'contain' as const, sourceWidth: 1280, sourceHeight: 720, mirrorX: true };
+    const band = cameraFrameRect(1080, 1920, options);
+    const point = toWireframePoint({ x: 0.25, y: 0.5 }, 1080, 1920, options);
+    expect(point.x).toBeCloseTo(0.75 * 1080);
+    expect(point.y).toBeCloseTo(band.y + 0.5 * band.height);
+  });
+});

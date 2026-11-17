@@ -9,16 +9,15 @@ import {
   MIRROR_SCAN_COUNTDOWN_MS,
   MIRROR_SCAN_INSTRUCTION,
   MIRROR_SCAN_INSTRUCTION_HOLD_MS,
+  MIRROR_SCAN_STEP_COPY,
   type MirrorScanCountdownStep,
   nextMirrorScanCountdownStep,
 } from '../smartMirror/mirrorScanPreamble';
 import { useMirrorHandNav } from '../smartMirror/MirrorHandNavContext';
+import { mirrorGestureButtonClass } from '../smartMirror/mirrorGestureButton';
 import { MirrorPortraitCard } from '../smartMirror/MirrorPortraitCard';
 import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
-
-const mirrorControlButtonClass =
-  'h-auto min-h-9 rounded-lg border border-black bg-white px-4 py-1.5 text-sm font-medium text-black shadow-none hover:bg-neutral-50';
 
 /**
  * Off-screen but large enough that the decoder still produces frames for timed capture.
@@ -57,6 +56,7 @@ export function SmartMirrorAnalysisScreen() {
     guidance,
     error: visionError,
     targetCount,
+    captureStep,
   } = useVision();
   const { speak, cancel } = useVoiceInstructions(sessionActive);
   const speakRef = useRef(speak);
@@ -270,14 +270,27 @@ export function SmartMirrorAnalysisScreen() {
   useEffect(() => {
     if (phase !== 'scanning' || !guidance) return;
     let text = guidanceToCopy(guidance);
-    if (guidance === 'READY') {
-      text = 'Stand still and face the camera. Capturing for 8 seconds.';
-    }
+    // Each step of the guided capture is spoken by the effect below, not by guidance.
+    if (guidance === 'READY') return;
     if (guidance === 'SCAN_COMPLETE') {
       text = 'Capture complete.';
     }
     speakRef.current(text, isHighPriorityGuidance(guidance) ? { priority: 'high' } : undefined);
   }, [guidance, phase]);
+
+  const stepStage = captureStep?.stage ?? null;
+  const stepPhase = captureStep?.phase ?? null;
+  const stepCount = captureStep?.count ?? null;
+  const stepText =
+    stepStage && stepPhase && stepPhase !== 'count' ? MIRROR_SCAN_STEP_COPY[stepStage][stepPhase] : '';
+  useEffect(() => {
+    if (phase !== 'scanning' || !stepStage || !stepPhase) return;
+    if (stepPhase === 'count') {
+      speakRef.current(String(stepCount), { priority: 'high' });
+    } else if (stepText) {
+      speakRef.current(stepText, { priority: 'high' });
+    }
+  }, [phase, stepCount, stepPhase, stepStage, stepText]);
 
   useEffect(() => {
     if (phase !== 'scanning' || scanState !== 'error' || !visionError) return;
@@ -294,7 +307,7 @@ export function SmartMirrorAnalysisScreen() {
     for (const img of result.images) {
       dispatch({
         type: 'ADD_CAPTURE',
-        image: { blob: img.blob, angleDeg: img.angleDeg, timestamp: img.timestamp },
+        image: { blob: img.blob, angleDeg: img.angleDeg, timestamp: img.timestamp, pose: img.pose },
       });
     }
     releaseCamera();
@@ -320,13 +333,13 @@ export function SmartMirrorAnalysisScreen() {
         data-testid="mirror-analysis-camera"
         className={HIDDEN_CAMERA_CLASS}
       />
-      <div className="flex shrink-0 items-start justify-between gap-3 p-4 sm:p-5">
+      <div className="flex shrink-0 items-start justify-between gap-5 p-5 sm:gap-6 sm:p-6">
         <Button
           type="button"
           variant="outline"
           data-testid="mirror-analysis-back"
           {...{ [MIRROR_GESTURE_TARGET_ATTR]: 'true' }}
-          className={cn(mirrorControlButtonClass)}
+            className={cn(mirrorGestureButtonClass)}
           onClick={returnHome}
         >
           Back
@@ -338,7 +351,7 @@ export function SmartMirrorAnalysisScreen() {
           title={!isOnline ? offlineMessage : undefined}
           data-testid="mirror-analysis-start"
           {...{ [MIRROR_GESTURE_TARGET_ATTR]: 'true' }}
-          className={cn(mirrorControlButtonClass)}
+            className={cn(mirrorGestureButtonClass)}
           onClick={() => void handleStart()}
         >
           Start
@@ -357,6 +370,27 @@ export function SmartMirrorAnalysisScreen() {
             <p className="max-w-lg text-lg font-medium leading-relaxed text-white sm:text-xl">
               {MIRROR_SCAN_INSTRUCTION}
             </p>
+          </div>
+        ) : null}
+        {phase === 'scanning' && stepPhase === 'count' && stepCount !== null ? (
+          <div
+            className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-black"
+            data-testid="mirror-analysis-step-count"
+            aria-live="assertive"
+          >
+            <p className="text-xl font-medium text-white">
+              {stepStage ? MIRROR_SCAN_STEP_COPY[stepStage].turn : ''}
+            </p>
+            <span className="text-[min(28vw,12rem)] font-bold tabular-nums text-white">{stepCount}</span>
+          </div>
+        ) : null}
+        {phase === 'scanning' && stepPhase && stepPhase !== 'count' && stepText ? (
+          <div
+            className="absolute inset-0 z-10 flex items-center justify-center bg-black px-6 text-center"
+            data-testid="mirror-analysis-step"
+            aria-live="assertive"
+          >
+            <p className="max-w-lg text-2xl font-semibold text-white sm:text-3xl">{stepText}</p>
           </div>
         ) : null}
         {phase === 'countdown' && countdownStep !== null ? (

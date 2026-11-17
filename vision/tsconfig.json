@@ -17,6 +17,7 @@
     "baseUrl": ".",
     "paths": {
       "@mediapipe/tasks-vision": ["../app/node_modules/@mediapipe/tasks-vision"],
+      "onnxruntime-web/webgpu": ["../app/node_modules/onnxruntime-web/types.d.ts"],
       "vitest": ["../app/node_modules/vitest"]
     }
   },

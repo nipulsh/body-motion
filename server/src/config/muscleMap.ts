@@ -85,7 +85,10 @@ function entryFromMeshIds(meshIds: string[], preferredName: string): ResolvedMus
  * Resolve an AI-returned muscle name to BodyExplorer mesh ids using
  * muscleMap.json (clinical groupings) and muscle_files.json (component meshes).
  */
-export function lookupMuscle(name: string): ResolvedMuscle | null {
+export function lookupMuscle(
+  name: string,
+  options: { fuzzy?: boolean } = {},
+): ResolvedMuscle | null {
   const normalised = normaliseMuscleName(name);
   if (!normalised) return null;
 
@@ -126,6 +129,8 @@ export function lookupMuscle(name: string): ResolvedMuscle | null {
     };
   }
 
+  if (options.fuzzy === false) return null;
+
   // Fuzzy: find catalogue entries whose normalised name is contained in / contains the query.
   let best: { score: number; resolved: ResolvedMuscle } | null = null;
   for (const [key, value] of normalisedIndex) {
@@ -162,4 +167,19 @@ export function lookupMuscle(name: string): ResolvedMuscle | null {
   }
 
   return best && best.score >= 0.45 ? best.resolved : null;
+}
+
+/** Catalogue group (HIP, UPPER_LEG, SHOULDER, …) of a resolved muscle, or null when unknown. */
+export function lookupMuscleGroup(name: string): string | null {
+  const direct = muscleMap[name];
+  if (direct) return direct.group;
+  const resolved = lookupMuscle(name);
+  if (!resolved) return null;
+  const byCatalogue = muscleMap[resolved.catalogueName];
+  if (byCatalogue) return byCatalogue.group;
+  for (const mesh of resolved.bodyExplorerMeshNames) {
+    const owner = meshIdIndex.get(normaliseMeshId(mesh));
+    if (owner) return owner.entry.group;
+  }
+  return null;
 }

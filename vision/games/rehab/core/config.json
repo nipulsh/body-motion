@@ -1,0 +1,56 @@
+{
+  "poseFps": 30,
+  "tracking": {
+    "minVisibility": 0.6,
+    "legFrameMin": 0.25,
+    "legFrameMax": 0.55,
+    "confirmFrames": 3,
+    "hysteresis": 0.05,
+    "lostRelockSeconds": 3,
+    "resumeAfterSeconds": 0.5,
+    "oneEuro": { "minCutoff": 1.2, "beta": 20, "dCutoff": 1.0 },
+    "personJumpShoulderWidths": 1.2,
+    "personJumpMaxGrowth": 2.5,
+    "personScaleJump": 0.3,
+    "anchorShoulderWidths": 2.0,
+    "anchorSizeRange": [0.7, 1.4]
+  },
+  "base": {
+    "stillSeconds": 2,
+    "speedWindowSeconds": 1,
+    "maxHipSpeedLegPerSec": 0.02,
+    "rebaseMaxChange": 0.05,
+    "rebaseMaxFootPct": 1,
+    "rebaseAlpha": 0.01,
+    "rebaseStillSeconds": 1,
+    "tallHipPct": 97,
+    "seatedLegPerTorso": 1.55,
+    "defaultLegFrame": 0.42
+  },
+  "view": { "frontAbove": 0.55, "sideBelow": 0.3 },
+  "hover": { "dwellSeconds": 1.2, "exitDwellSeconds": 1.5, "readyDwellSeconds": 1.2, "cursorMinVisibility": 0.5 },
+  "render": {
+    "fovDeg": 35,
+    "bloom": false,
+    "layers": { "near": 1, "player": 0, "mid": -1, "far": -3, "backdrop": -6 }
+  },
+  "colors": {
+    "left": "#59c5f5",
+    "right": "#e4535d",
+    "good": "#2dc08e",
+    "caution": "#c5953b",
+    "purple": "#a87eeb",
+    "text": "#ffffff",
+    "muted": "#b8bcc4",
+    "grey": "#9aa0a6"
+  },
+  "countdownSeconds": 3,
+  "trackingMessages": {
+    "feet": "Step back so I can see your feet",
+    "closer": "Step a little closer",
+    "body": "Stand where I can see you",
+    "hands": "Show your hands",
+    "front": "Face the mirror",
+    "side": "Turn sideways"
+  }
+}

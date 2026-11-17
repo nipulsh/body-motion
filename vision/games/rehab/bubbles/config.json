@@ -1,0 +1,20 @@
+{
+  "requiredLandmarks": [11, 12, 23, 24],
+  "marchExtraLandmarks": [25, 26],
+  "standingExtraLandmarks": [27, 28],
+  "reach": { "horizontal": 0.85, "below": 0.4, "above": 0.6, "maxFromShoulder": 0.85, "spawnTries": 40 },
+  "handRadius": 0.08,
+  "crossingMinShoulderWidths": 0.15,
+  "sameSideMinShoulderWidths": 0.1,
+  "maxBubbles": 6,
+  "fingertipMinVisibility": 0.6,
+  "wristMinVisibility": 0.5,
+  "wrongHandRepeatSeconds": 1,
+  "ruleAnnounceSeconds": 3,
+  "trunkLean": { "enabled": true, "good": 5, "borderline": 8, "cueAfterSeconds": 1 },
+  "score": { "pop": 10, "fastBonus": 5, "fastSeconds": 1.5, "comboEvery": 5, "comboMax": 3, "distractorPenalty": 5, "goldMultiplier": 2 },
+  "stars": { "one": 50, "two": 70, "three": 90, "threeMaxWrongPct": 10 },
+  "march": { "liftPct": 10, "lowerPct": 5, "gapSeconds": 2.5 },
+  "fadeSeconds": 0.6,
+  "seed": 1337
+}

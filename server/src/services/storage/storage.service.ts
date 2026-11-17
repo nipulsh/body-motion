@@ -1,8 +1,39 @@
 import { env } from '../../config/env';
-import { supabaseAdmin } from './supabase.client';
-import { patientStoragePrefix } from './paths';
 import { AppError } from '../../utils/AppError';
 import { logger } from '../../utils/logger';
+import { patientStoragePrefix } from './paths';
+import {
+  createLocalSignedUrl,
+  ensureLocalBuckets,
+  listLocalObjectPaths,
+  readLocalObject,
+  removeLocalObjects,
+  removeLocalPrefixes,
+  writeLocalObject,
+} from './local.storage';
+import {
+  createSupabaseSignedUrl,
+  deleteSupabaseObjects,
+  deleteSupabasePatientStorage,
+  downloadSupabaseObject,
+  ensureSupabaseBuckets,
+  uploadSupabaseObject,
+} from './supabase.storage';
+
+function localBuckets(): string[] {
+  return [
+    env.SUPABASE_BUCKET_PATIENT_IMAGES,
+    env.SUPABASE_BUCKET_GENERATED_IMAGES,
+    env.SUPABASE_BUCKET_MODELS,
+  ];
+}
+
+function wrapLocalError(action: string, error: unknown): never {
+  if (error instanceof AppError) throw error;
+  const message = error instanceof Error ? error.message : String(error);
+  logger.error(`Local storage ${action} failed`, { error: message });
+  throw new AppError('STORAGE_ERROR', `Failed to ${action}: ${message}`, 500, { expose: true });
+}
 
 export async function uploadObject(
   bucket: string,
@@ -10,63 +41,56 @@ export async function uploadObject(
   data: Buffer,
   contentType: string,
 ): Promise<void> {
-  const { error } = await supabaseAdmin.storage.from(bucket).upload(storagePath, data, {
-    contentType,
-    upsert: true,
-  });
+  if (env.STORAGE_DRIVER === 'supabase') {
+    await uploadSupabaseObject(bucket, storagePath, data, contentType);
+    return;
+  }
 
-  if (error) {
-    logger.error('Storage upload failed', { bucket, storagePath, error: error.message });
-    throw new AppError('STORAGE_ERROR', `Failed to upload file: ${error.message}`, 502, {
-      expose: true,
-    });
+  try {
+    await writeLocalObject(env.localStorageDir, bucket, storagePath, data);
+  } catch (error) {
+    wrapLocalError('upload file', error);
   }
 }
 
 export async function createSignedUrl(bucket: string, storagePath: string): Promise<string> {
-  const { data, error } = await supabaseAdmin.storage
-    .from(bucket)
-    .createSignedUrl(storagePath, env.SIGNED_URL_TTL_SECONDS);
-
-  if (error || !data?.signedUrl) {
-    throw new AppError(
-      'STORAGE_ERROR',
-      `Failed to create signed URL: ${error?.message ?? 'unknown error'}`,
-      502,
-      { expose: true },
-    );
+  if (env.STORAGE_DRIVER === 'supabase') {
+    return createSupabaseSignedUrl(bucket, storagePath);
   }
 
-  return data.signedUrl;
+  return createLocalSignedUrl({
+    publicBaseUrl: env.publicBaseUrl,
+    secret: env.localStorageSigningSecret,
+    bucket,
+    storagePath,
+    ttlSeconds: env.SIGNED_URL_TTL_SECONDS,
+  });
 }
 
 export async function downloadObject(bucket: string, storagePath: string): Promise<Buffer> {
-  const { data, error } = await supabaseAdmin.storage.from(bucket).download(storagePath);
-
-  if (error || !data) {
-    throw new AppError(
-      'STORAGE_ERROR',
-      `Failed to download file: ${error?.message ?? 'unknown error'}`,
-      502,
-      { expose: true },
-    );
+  if (env.STORAGE_DRIVER === 'supabase') {
+    return downloadSupabaseObject(bucket, storagePath);
   }
 
-  const arrayBuffer = await data.arrayBuffer();
-  return Buffer.from(arrayBuffer);
+  try {
+    return await readLocalObject(env.localStorageDir, bucket, storagePath);
+  } catch (error) {
+    wrapLocalError('download file', error);
+  }
 }
 
 export async function deleteObjects(bucket: string, paths: string[]): Promise<void> {
   if (paths.length === 0) return;
 
-  const uniquePaths = [...new Set(paths)];
-  const { error } = await supabaseAdmin.storage.from(bucket).remove(uniquePaths);
+  if (env.STORAGE_DRIVER === 'supabase') {
+    await deleteSupabaseObjects(bucket, paths);
+    return;
+  }
 
-  if (error) {
-    logger.error('Storage delete failed', { bucket, count: uniquePaths.length, error: error.message });
-    throw new AppError('STORAGE_ERROR', `Failed to delete storage objects: ${error.message}`, 502, {
-      expose: true,
-    });
+  try {
+    await removeLocalObjects(env.localStorageDir, bucket, [...new Set(paths)]);
+  } catch (error) {
+    wrapLocalError('delete storage objects', error);
   }
 }
 
@@ -74,52 +98,26 @@ export async function deletePatientStorage(
   patientId: string,
   legacyUserIds: string[] = [],
 ): Promise<void> {
+  if (env.STORAGE_DRIVER === 'supabase') {
+    await deleteSupabasePatientStorage(patientId, legacyUserIds);
+    return;
+  }
+
   const prefixes = [patientStoragePrefix(patientId)];
   for (const userId of legacyUserIds) {
     prefixes.push(`${userId}/${patientId}`);
   }
-  const buckets = [
-    env.SUPABASE_BUCKET_PATIENT_IMAGES,
-    env.SUPABASE_BUCKET_GENERATED_IMAGES,
-    env.SUPABASE_BUCKET_MODELS,
-  ];
 
-  for (const bucket of buckets) {
-    const paths = await listAllObjectPaths(bucket, prefixes);
-    if (paths.length > 0) {
-      await deleteObjects(bucket, paths);
+  try {
+    for (const bucket of localBuckets()) {
+      const paths = await listLocalObjectPaths(env.localStorageDir, bucket, prefixes);
+      if (paths.length > 0) {
+        await removeLocalObjects(env.localStorageDir, bucket, paths);
+      }
+      await removeLocalPrefixes(env.localStorageDir, bucket, prefixes);
     }
-  }
-}
-
-async function listAllObjectPaths(bucket: string, prefixes: string[]): Promise<string[]> {
-  const collected: string[] = [];
-
-  for (const prefix of prefixes) {
-    await walkPrefix(bucket, prefix, collected);
-  }
-
-  return collected;
-}
-
-async function walkPrefix(bucket: string, prefix: string, collected: string[]): Promise<void> {
-  const { data, error } = await supabaseAdmin.storage.from(bucket).list(prefix, {
-    limit: 1000,
-    sortBy: { column: 'name', order: 'asc' },
-  });
-
-  if (error) {
-    logger.warn('Storage list failed during patient delete', { bucket, prefix, error: error.message });
-    return;
-  }
-
-  for (const entry of data ?? []) {
-    const fullPath = `${prefix}/${entry.name}`;
-    if (entry.id) {
-      collected.push(fullPath);
-    } else {
-      await walkPrefix(bucket, fullPath, collected);
-    }
+  } catch (error) {
+    wrapLocalError('delete patient storage', error);
   }
 }
 
@@ -128,50 +126,15 @@ export function toDataUri(buffer: Buffer, mimeType: string): string {
 }
 
 export async function ensureStorageBuckets(): Promise<void> {
-  const required = [
-    env.SUPABASE_BUCKET_PATIENT_IMAGES,
-    env.SUPABASE_BUCKET_GENERATED_IMAGES,
-    env.SUPABASE_BUCKET_MODELS,
-  ];
-
-  const { data, error } = await supabaseAdmin.storage.listBuckets();
-  if (error) {
-    logger.error('[ERROR]', {
-      stage: 'SUPABASE_STORAGE',
-      status: 502,
-      errorName: error.name,
-      message: error.message,
-    });
-    throw new AppError('STORAGE_ERROR', `Failed to list storage buckets: ${error.message}`, 502, {
-      expose: true,
-    });
+  if (env.STORAGE_DRIVER === 'supabase') {
+    await ensureSupabaseBuckets();
+    return;
   }
 
-  const existing = new Set((data ?? []).map((bucket) => bucket.name));
-  for (const name of required) {
-    if (existing.has(name)) {
-      logger.info('Storage bucket ready', { bucket: name });
-      continue;
-    }
-
-    const { error: createError } = await supabaseAdmin.storage.createBucket(name, {
-      public: false,
-    });
-    if (createError && !/already exists/i.test(createError.message)) {
-      logger.error('[ERROR]', {
-        stage: 'SUPABASE_STORAGE',
-        status: 502,
-        errorName: createError.name,
-        message: createError.message,
-        bucket: name,
-      });
-      throw new AppError(
-        'STORAGE_ERROR',
-        `Failed to create storage bucket "${name}": ${createError.message}`,
-        502,
-        { expose: true },
-      );
-    }
-    logger.info('Created private storage bucket', { bucket: name });
-  }
+  await ensureLocalBuckets(env.localStorageDir, localBuckets());
+  logger.info('Local storage ready', {
+    driver: 'local',
+    dir: env.localStorageDir,
+    buckets: localBuckets(),
+  });
 }

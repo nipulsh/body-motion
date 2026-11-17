@@ -1,6 +1,8 @@
 import { useWorkflow } from '../../workflow/WorkflowContext';
 import { useScanUploadPipeline } from '../../hooks/useScanUploadPipeline';
 import { MirrorPortraitCard } from '../smartMirror/MirrorPortraitCard';
+import { mirrorTopZoneFillClass } from '../smartMirror/mirrorTopZone';
+import { cn } from '@/lib/utils';
 import { Progress } from '../ui/progress';
 
 export function SmartMirrorUploadingScreen() {
@@ -9,7 +11,7 @@ export function SmartMirrorUploadingScreen() {
 
   return (
     <MirrorPortraitCard testId="mirror-upload-card">
-      <div className="flex flex-1 flex-col items-center justify-center gap-6 p-8 text-center">
+      <div className={cn('flex flex-col items-center justify-center-safe gap-6 p-8 text-center', mirrorTopZoneFillClass)}>
         <p className="text-lg font-medium text-white">Uploading scan</p>
         <p className="text-sm text-neutral-300">
           Sending {state.capturedImages.length} frames securely…

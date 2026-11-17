@@ -1,7 +1,15 @@
 import { VISION_CONFIG } from '../config';
 import { VisionError } from '../errors';
 import type { VisionEventType } from '../events';
-import type { CapturedFrame, CapturedScanImage, ScanGuidance, ScanResult, ScanState } from '../types';
+import type {
+  CapturedFrame,
+  CaptureStep,
+  CapturedScanImage,
+  PoseResult,
+  ScanGuidance,
+  ScanResult,
+  ScanState,
+} from '../types';
 import { ImageStore } from '../storage/imageStore';
 
 export interface TimedCaptureControllerDeps {
@@ -10,6 +18,8 @@ export interface TimedCaptureControllerDeps {
   captureFrame: (video: HTMLVideoElement) => Promise<CapturedFrame | null>;
   emit: (event: VisionEventType) => void;
   now?: () => number;
+  /** Optional pose detection on each captured frame (posture measurements for the analysis). */
+  detectPose?: (video: HTMLVideoElement) => PoseResult | null;
 }
 
 export interface TimedCaptureControllerSnapshot {
@@ -18,21 +28,37 @@ export interface TimedCaptureControllerSnapshot {
   capturedCount: number;
   capturedImages: CapturedScanImage[];
   result: ScanResult | null;
+  /** Front / turn right / back to the camera, with the 3-2-1 count between them. Null when not scanning. */
+  captureStep: CaptureStep | null;
 }
 
+/**
+ * Guided capture for the analysis: `framesPerStage` frames facing the camera, then a prompt to turn
+ * right, a 3-2-1 count and the same again, then once more with the back to the camera. Each frame
+ * carries the stage's angle (0 front, 90 right, 180 back).
+ */
 export class TimedCaptureController {
   private readonly isCameraLive: () => boolean;
   private readonly getVideo: () => HTMLVideoElement | null;
   private readonly captureFrame: (video: HTMLVideoElement) => Promise<CapturedFrame | null>;
   private readonly emitEvent: (event: VisionEventType) => void;
   private readonly now: () => number;
+  private readonly detectPose: ((video: HTMLVideoElement) => PoseResult | null) | null;
+  /** Run pose detection on every Nth frame; doubles when a detection eats the frame budget, halves when it is cheap. */
+  private poseStride = 1;
   private readonly imageStore = new ImageStore();
 
   private scanState: ScanState = 'idle';
   private guidance: ScanGuidance | null = null;
   private result: ScanResult | null = null;
+  private captureStep: CaptureStep | null = null;
   private startedAt = 0;
-  private nextFrameIndex = 0;
+  private stageIndex = 0;
+  private stageStartedAt = 0;
+  /** Frames stored in the current stage. */
+  private stageFrames = 0;
+  /** Frames stored so far across stages; drives the pose stride. */
+  private totalFrames = 0;
   private timerId: ReturnType<typeof setTimeout> | null = null;
   private lastError: VisionError | null = null;
   /** Bumped on start, cancel, and dispose so stale async work cannot mutate state. */
@@ -44,6 +70,7 @@ export class TimedCaptureController {
     this.captureFrame = deps.captureFrame;
     this.emitEvent = deps.emit;
     this.now = deps.now ?? (() => performance.now());
+    this.detectPose = deps.detectPose ?? null;
   }
 
   getSnapshot(): TimedCaptureControllerSnapshot {
@@ -53,6 +80,7 @@ export class TimedCaptureController {
       capturedCount: this.imageStore.count(),
       capturedImages: this.imageStore.getAll(),
       result: this.result,
+      captureStep: this.captureStep,
     };
   }
 
@@ -84,7 +112,7 @@ export class TimedCaptureController {
     this.scanState = 'scanning';
     this.setGuidance('READY');
     this.startedAt = this.now();
-    this.scheduleNextFrame(generation);
+    this.beginStage(generation);
   }
 
   cancel(): void {
@@ -96,6 +124,7 @@ export class TimedCaptureController {
     }
     if (this.scanState === 'idle' || this.scanState === 'cancelled') return;
     this.scanState = 'cancelled';
+    this.captureStep = null;
     this.emitEvent('SCAN_CANCELLED');
   }
 
@@ -115,33 +144,53 @@ export class TimedCaptureController {
     return generation === this.sessionGeneration && this.scanState === 'scanning';
   }
 
+  private stage() {
+    return VISION_CONFIG.timedCapture.stages[this.stageIndex]!;
+  }
+
+  private setStep(step: CaptureStep): void {
+    this.captureStep = step;
+    this.emitEvent('SCAN_PROGRESS');
+  }
+
+  private stageDeadline(): number {
+    const { framesPerStage, frameIntervalMs, stageSlackMs } = VISION_CONFIG.timedCapture;
+    return this.stageStartedAt + framesPerStage * frameIntervalMs + stageSlackMs;
+  }
+
+  private beginStage(generation: number): void {
+    if (!this.isActiveSession(generation)) return;
+    this.stageStartedAt = this.now();
+    this.stageFrames = 0;
+    this.setStep({ stage: this.stage().id, phase: 'capture', count: null });
+    this.scheduleNextFrame(generation);
+  }
+
   private scheduleNextFrame(generation: number): void {
-    const { frameCount, frameIntervalMs, durationMs } = VISION_CONFIG.timedCapture;
+    const { framesPerStage, frameIntervalMs } = VISION_CONFIG.timedCapture;
     if (!this.isActiveSession(generation)) return;
 
-    const deadline = this.startedAt + durationMs;
-    if (this.now() >= deadline) {
-      this.complete();
+    if (this.stageFrames >= framesPerStage) {
+      this.finishStage(generation);
+      return;
+    }
+    if (this.now() >= this.stageDeadline()) {
+      this.failShort();
       return;
     }
 
-    if (this.nextFrameIndex >= frameCount) {
-      this.complete();
-      return;
-    }
-
-    const targetAt = this.startedAt + this.nextFrameIndex * frameIntervalMs;
+    const targetAt = this.stageStartedAt + this.stageFrames * frameIntervalMs;
     const delay = Math.max(0, targetAt - this.now());
 
     this.timerId = setTimeout(() => {
-      void this.captureScheduledFrame(deadline, generation);
+      void this.captureScheduledFrame(generation);
     }, delay);
   }
 
-  private async captureScheduledFrame(deadline: number, generation: number): Promise<void> {
+  private async captureScheduledFrame(generation: number): Promise<void> {
     if (!this.isActiveSession(generation)) return;
-    if (this.now() >= deadline) {
-      this.complete();
+    if (this.now() >= this.stageDeadline()) {
+      this.failShort();
       return;
     }
 
@@ -151,52 +200,111 @@ export class TimedCaptureController {
       return;
     }
 
-    const frameIndex = this.nextFrameIndex;
+    const frameIndex = this.totalFrames;
     const frame = await this.captureFrame(video);
     if (!this.isActiveSession(generation)) return;
 
     if (!frame) {
-      if (this.now() >= deadline) {
-        this.complete();
+      if (this.now() >= this.stageDeadline()) {
+        this.failShort();
         return;
       }
-      this.scheduleRetryFrame(deadline, generation);
+      this.scheduleRetryFrame(generation);
       return;
     }
 
-    this.nextFrameIndex += 1;
-    const captureTimestamp = this.startedAt + frameIndex * VISION_CONFIG.timedCapture.frameIntervalMs;
+    const pose = this.maybeDetectPose(video, frameIndex);
     this.imageStore.add({
       blob: frame.blob,
-      angleDeg: frameIndex,
-      timestamp: Math.round(captureTimestamp),
+      angleDeg: this.stage().angleDeg,
+      timestamp: Math.round(this.now()),
       quality: 1,
+      ...(pose ? { pose } : {}),
     });
+    this.stageFrames += 1;
+    this.totalFrames += 1;
     this.emitEvent('IMAGE_CAPTURED');
     this.emitEvent('SCAN_PROGRESS');
     if (!this.isActiveSession(generation)) return;
 
-    const { frameCount } = VISION_CONFIG.timedCapture;
-    if (this.now() >= deadline || this.imageStore.count() >= frameCount) {
-      this.complete();
-      return;
-    }
-
     this.scheduleNextFrame(generation);
   }
 
-  /** Retry the current frame index without stacking parallel capture loops. */
-  private scheduleRetryFrame(deadline: number, generation: number): void {
+  /** The stage has its frames: complete after the last one, otherwise ask for the next turn. */
+  private finishStage(generation: number): void {
     if (!this.isActiveSession(generation)) return;
-    const remaining = deadline - this.now();
-    if (remaining <= 0) {
+    if (this.stageIndex >= VISION_CONFIG.timedCapture.stages.length - 1) {
       this.complete();
+      return;
+    }
+    this.stageIndex += 1;
+    this.setStep({ stage: this.stage().id, phase: 'turn', count: null });
+    this.timerId = setTimeout(() => {
+      this.countdown(generation, VISION_CONFIG.timedCapture.countdownFrom);
+    }, VISION_CONFIG.timedCapture.turnPromptMs);
+  }
+
+  private countdown(generation: number, count: number): void {
+    if (!this.isActiveSession(generation)) return;
+    if (count <= 0) {
+      this.beginStage(generation);
+      return;
+    }
+    this.setStep({ stage: this.stage().id, phase: 'count', count });
+    this.timerId = setTimeout(() => {
+      this.countdown(generation, count - 1);
+    }, VISION_CONFIG.timedCapture.countdownStepMs);
+  }
+
+  /**
+   * Pose is optional here (posture measurements), the burst's frame rate is not. Detection runs
+   * synchronously on the main thread, so on a slow device it is thinned out instead of letting
+   * the burst miss its frame count.
+   */
+  private maybeDetectPose(video: HTMLVideoElement, frameIndex: number): PoseResult | null {
+    if (!this.detectPose || frameIndex % this.poseStride !== 0) return null;
+    const started = this.now();
+    let pose: PoseResult | null = null;
+    try {
+      pose = this.detectPose(video);
+    } catch {
+      pose = null;
+    }
+    const budget = VISION_CONFIG.timedCapture.frameIntervalMs * VISION_CONFIG.timedCapture.poseBudgetFraction;
+    const took = this.now() - started;
+    if (took > budget) {
+      this.poseStride = Math.min(VISION_CONFIG.timedCapture.maxPoseStride, this.poseStride * 2);
+    } else if (took <= budget / 2) {
+      // Detection got fast again (the first passes warm up the GPU): sample more frames.
+      // Halving only below half the budget leaves a dead band, so the stride does not oscillate.
+      this.poseStride = Math.max(1, this.poseStride / 2);
+    }
+    return pose;
+  }
+
+  /** Retry the current frame without stacking parallel capture loops. */
+  private scheduleRetryFrame(generation: number): void {
+    if (!this.isActiveSession(generation)) return;
+    const remaining = this.stageDeadline() - this.now();
+    if (remaining <= 0) {
+      this.failShort();
       return;
     }
     const delay = Math.max(1, Math.min(VISION_CONFIG.timedCapture.frameIntervalMs, remaining));
     this.timerId = setTimeout(() => {
-      void this.captureScheduledFrame(deadline, generation);
+      void this.captureScheduledFrame(generation);
     }, delay);
+  }
+
+  private failShort(): void {
+    if (this.scanState !== 'scanning') return;
+    const { frameCount } = VISION_CONFIG.timedCapture;
+    this.fail(
+      new VisionError(
+        'SCAN_FAILED',
+        `Timed capture produced ${this.imageStore.count()} frames; expected ${frameCount}.`,
+      ),
+    );
   }
 
   private complete(): void {
@@ -205,16 +313,12 @@ export class TimedCaptureController {
     const { frameCount } = VISION_CONFIG.timedCapture;
     const count = this.imageStore.count();
     if (count < frameCount) {
-      this.fail(
-        new VisionError(
-          'SCAN_FAILED',
-          `Timed capture produced ${count} frames; expected ${frameCount}.`,
-        ),
-      );
+      this.failShort();
       return;
     }
 
     const completedAt = this.now();
+    this.captureStep = null;
     this.result = {
       images: this.imageStore.getAll(),
       imageCount: count,
@@ -232,6 +336,7 @@ export class TimedCaptureController {
   private fail(error: VisionError): void {
     this.clearTimer();
     this.lastError = error;
+    this.captureStep = null;
     this.scanState = 'error';
     this.emitEvent('SCAN_ERROR');
   }
@@ -254,8 +359,13 @@ export class TimedCaptureController {
     this.imageStore.clear();
     this.result = null;
     this.guidance = null;
+    this.captureStep = null;
     this.startedAt = 0;
-    this.nextFrameIndex = 0;
+    this.stageIndex = 0;
+    this.stageStartedAt = 0;
+    this.stageFrames = 0;
+    this.totalFrames = 0;
     this.lastError = null;
+    this.poseStride = 1;
   }
 }

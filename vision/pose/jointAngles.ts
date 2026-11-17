@@ -9,7 +9,7 @@ import type {
   TrackableJointName,
   Vec3,
 } from '../types';
-import { getLandmark, type PoseLandmarkName } from './landmarks';
+import { getLandmark, landmarkSeen, type PoseLandmarkName } from './landmarks';
 
 const TRACKABLE_JOINTS: readonly TrackableJointName[] = [
   'left_shoulder',
@@ -209,6 +209,16 @@ function resolveLandmarkSet(pose: PoseResult): {
   if (pose.worldLandmarks && pose.worldLandmarks.length >= 33) {
     return { landmarks: pose.worldLandmarks, coordinateSpace: 'world' };
   }
+  // Normalized x spans the frame width and y its height. Unscaled, a camera roll changes the
+  // apparent angle even though the body has not moved, so put both axes in the same units.
+  const aspect = pose.frameAspect;
+  if (aspect && Number.isFinite(aspect) && aspect > 0 && aspect !== 1) {
+    return {
+      // MediaPipe image z uses roughly the same scale as x, so it is rescaled with it.
+      landmarks: pose.landmarks.map((lm) => ({ ...lm, x: lm.x * aspect, z: lm.z * aspect })),
+      coordinateSpace: 'image',
+    };
+  }
   return { landmarks: pose.landmarks, coordinateSpace: 'image' };
 }
 
@@ -229,8 +239,8 @@ function passesSideConsistency(
   const toSide = distance3D(middle, sideAnchor);
   const toOpposite = distance3D(middle, oppositeAnchor);
   if (toSide === 0) return false;
-  // Middle landmark should be materially closer to its anatomical side anchor.
-  return toSide * ratioLimit <= toOpposite;
+  // Only a clear swap counts: the landmark sits materially closer to the opposite side.
+  return toOpposite * ratioLimit > toSide;
 }
 
 function computeTripletReading(
@@ -272,12 +282,95 @@ function computeTripletReading(
   };
 }
 
-function computeJointReading(
-  joint: TrackableJointName,
-  landmarks: readonly PoseLandmark[],
+const SPINE_SIDES = ['left', 'right'] as const;
+
+function spineChain(side: (typeof SPINE_SIDES)[number]): readonly PoseLandmarkName[] {
+  return [`${side}Shoulder`, `${side}Hip`, `${side}Knee`];
+}
+
+function placed(landmark: PoseLandmark | undefined): landmark is PoseLandmark {
+  return Boolean(landmark && Number.isFinite(landmark.x) && Number.isFinite(landmark.y) && Number.isFinite(landmark.z));
+}
+
+function withVisibility(point: Vec3, visibility: number): PoseLandmark {
+  return { x: point.x, y: point.y, z: point.z, visibility };
+}
+
+/**
+ * Hip angle between the shoulders, hips, and knees. A side-view deadlift hides one side,
+ * so a confident side is enough. Both sides are averaged only when each one is seen.
+ * Visibility is read from the image landmarks; the angle itself uses world points when
+ * those are the geometry being measured.
+ */
+function computeSpineReading(
+  geometry: readonly PoseLandmark[],
+  image: readonly PoseLandmark[],
   options: Required<JointAngleOptions>,
   previousAngle?: number,
 ): JointAngleReading {
+  const minVisibility = options.minimumLandmarkVisibility;
+  const usable = SPINE_SIDES.filter((side) =>
+    spineChain(side).every((name) => landmarkSeen(getLandmark(image, name), minVisibility)),
+  );
+  const involved = SPINE_SIDES.flatMap((side) => spineChain(side).map((name) => getLandmark(image, name)));
+  if (usable.length === 0) return unavailable('MISSING_LANDMARK', meanVisibility(involved));
+
+  const vertex = (side: (typeof SPINE_SIDES)[number]) => {
+    const shoulder = getLandmark(geometry, `${side}Shoulder`) ?? getLandmark(image, `${side}Shoulder`);
+    const hip = getLandmark(geometry, `${side}Hip`) ?? getLandmark(image, `${side}Hip`);
+    const knee = getLandmark(geometry, `${side}Knee`) ?? getLandmark(image, `${side}Knee`);
+    if (!placed(shoulder) || !placed(hip) || !placed(knee)) return null;
+    return { shoulder, hip, knee };
+  };
+
+  const readingVisibility = (landmark: PoseLandmark | undefined) => {
+    if (!landmark) return 0;
+    if (!landmarkSeen(landmark, minVisibility)) return landmark.visibility;
+    return Math.max(landmark.visibility, landmark.presence ?? 0);
+  };
+  const confidenceOf = usable.flatMap((side) => spineChain(side).map((name) => getLandmark(image, name)));
+  const confidence =
+    confidenceOf.length === 0
+      ? 0
+      : confidenceOf.reduce((sum, mark) => sum + readingVisibility(mark), 0) / confidenceOf.length;
+  const seenAt = (side: (typeof SPINE_SIDES)[number], point: PoseLandmark, part: 'Shoulder' | 'Hip' | 'Knee') => ({
+    ...point,
+    visibility: readingVisibility(getLandmark(image, `${side}${part}`)),
+  });
+  let triplet: { a: PoseLandmark; b: PoseLandmark; c: PoseLandmark } | null = null;
+  if (usable.length === 2) {
+    const left = vertex('left');
+    const right = vertex('right');
+    if (left && right) {
+      triplet = {
+        a: withVisibility(midpoint(left.shoulder, right.shoulder), confidence),
+        b: withVisibility(midpoint(left.hip, right.hip), confidence),
+        c: withVisibility(midpoint(left.knee, right.knee), confidence),
+      };
+    }
+  } else {
+    const side = usable[0]!;
+    const one = vertex(side);
+    if (one) {
+      triplet = {
+        a: seenAt(side, one.shoulder, 'Shoulder'),
+        b: seenAt(side, one.hip, 'Hip'),
+        c: seenAt(side, one.knee, 'Knee'),
+      };
+    }
+  }
+  if (!triplet) return unavailable('MISSING_LANDMARK', confidence);
+  return computeTripletReading(triplet.a, triplet.b, triplet.c, options, previousAngle);
+}
+
+function computeJointReading(
+  joint: TrackableJointName,
+  landmarks: readonly PoseLandmark[],
+  image: readonly PoseLandmark[],
+  options: Required<JointAngleOptions>,
+  previousAngle?: number,
+): JointAngleReading {
+  if (joint === 'spine') return computeSpineReading(landmarks, image, options, previousAngle);
   const definition = JOINT_DEFINITIONS[joint];
 
   if (definition.kind === 'computed') {
@@ -384,6 +477,7 @@ export function calculateJointAngles(
     joints[joint] = computeJointReading(
       joint,
       landmarks,
+      pose.landmarks,
       resolved,
       resolved.previousAngles[joint],
     );
@@ -399,12 +493,14 @@ export function calculateJointAngles(
 /** Stateful wrapper that tracks previous angles for sudden-jump rejection. */
 export class JointAngleCalculator {
   private previous: Partial<Record<TrackableJointName, number>> = {};
+  private spineHold: { angle: number; confidence: number; at: number } | null = null;
 
   calculate(pose: PoseResult, options?: Omit<JointAngleOptions, 'previousAngles'>): JointAnglesSnapshot {
     const snapshot = calculateJointAngles(pose, {
       ...options,
       previousAngles: this.previous,
     });
+    this.holdSpine(snapshot, pose.timestamp);
 
     const nextPrevious: Partial<Record<TrackableJointName, number>> = {};
     for (const joint of TRACKABLE_JOINTS) {
@@ -419,6 +515,27 @@ export class JointAngleCalculator {
 
   reset(): void {
     this.previous = {};
+    this.spineHold = null;
+  }
+
+  /**
+   * A side-view landmark often drops for a frame while the trunk is moving.
+   * Keep the last spine angle briefly so that blink does not freeze the rep.
+   * The hold is not refreshed, so a real loss still expires.
+   */
+  private holdSpine(snapshot: JointAnglesSnapshot, timestamp: number): void {
+    const spine = snapshot.joints.spine;
+    const holdMs = VISION_CONFIG.jointAngles.spineHoldMs;
+    if (spine.available) {
+      this.spineHold = { angle: spine.angle, confidence: spine.confidence, at: timestamp };
+      return;
+    }
+    const held = this.spineHold;
+    if (!held || timestamp < held.at || timestamp - held.at > holdMs) {
+      this.spineHold = null;
+      return;
+    }
+    snapshot.joints.spine = { available: true, angle: held.angle, confidence: held.confidence };
   }
 }
 

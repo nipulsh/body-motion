@@ -3,7 +3,7 @@ import type { JointAnglesSnapshot } from '../types';
 import {
   allAvailable,
   allInStartZone,
-  allInTargetZone,
+  allReachedTarget,
   anyMovingTowardStart,
   anyMovingTowardTarget,
   averageConcentricProgress,
@@ -11,9 +11,12 @@ import {
   evaluateRule,
   jointDisplayName,
   movementHint,
+  concentricDirection,
+  startRange,
+  targetRange,
   type EvaluatedRule,
 } from './ruleEvaluation';
-import type { Exercise, RepDetectionResult, RepPhase, RuleStatus } from './types';
+import type { Exercise, RepDetectionResult, RepPhase, RuleStatus, TrackingRule } from './types';
 
 type InternalPhase = 'idle_at_start' | 'concentric' | 'at_target' | 'eccentric';
 
@@ -21,6 +24,9 @@ interface RepDetectorConfig {
   startToleranceFactor: number;
   minTimeBetweenRepsMs: number;
   holdGraceMs: number;
+  restCalibrationMs: number;
+  restStabilityDeg: number;
+  missedAttemptMinProgress: number;
 }
 
 const DEFAULT_CONFIG: RepDetectorConfig = VISION_CONFIG.repDetection;
@@ -72,6 +78,13 @@ export class RepDetector {
   private justCompletedRep = false;
   private holdComplete = false;
   private completed = false;
+  /** Furthest angle each joint reached toward its target during the current attempt. */
+  private attemptBest = new Map<string, number>();
+  /** Why the last attempt did not count; shown until the next attempt starts. */
+  private missedFeedback: string | null = null;
+  /** Start windows adopted from the patient's own resting angle (see calibrateRest). */
+  private restOverrides = new Map<string, { min: number; max: number }>();
+  private restHold: { since: number; angles: Map<string, number> } | null = null;
 
   constructor(exercise: Exercise, config: Partial<RepDetectorConfig> = {}) {
     this.exercise = exercise;
@@ -96,6 +109,10 @@ export class RepDetector {
     this.justCompletedRep = false;
     this.holdComplete = false;
     this.completed = false;
+    this.attemptBest.clear();
+    this.missedFeedback = null;
+    this.restOverrides.clear();
+    this.restHold = null;
   }
 
   markCompleted(): void {
@@ -123,10 +140,15 @@ export class RepDetector {
     if (this.justCompletedRep) {
       this.justCompletedRep = false;
       const evaluated = this.evaluate(snapshot);
+      // Still advance on this frame: dropping it lost the deepest point of a quick next rep.
+      if (allAvailable(evaluated)) this.advanceState(evaluated, snapshot.timestamp);
       return this.buildResult(snapshot, 'REP_COMPLETED', 1, 'Good', true, evaluated);
     }
 
-    const evaluated = this.evaluate(snapshot);
+    let evaluated = this.evaluate(snapshot);
+    if (!this.primedAtStart && allAvailable(evaluated) && this.calibrateRest(evaluated, snapshot.timestamp)) {
+      evaluated = this.evaluate(snapshot);
+    }
 
     if (!allAvailable(evaluated)) {
       const phase = this.publicPhaseForInternal(this.internalPhase);
@@ -152,15 +174,73 @@ export class RepDetector {
 
   private evaluate(snapshot: JointAnglesSnapshot): EvaluatedRule[] {
     const startTolerance = startToleranceForExercise(this.exercise, this.config);
-    return this.exercise.trackingRules.map((rule) =>
+    return this.effectiveRules().map((rule) =>
       evaluateRule(rule, snapshot.joints[rule.joint], startTolerance),
     );
+  }
+
+  /** Tracking rules with any adopted personal start window applied. */
+  private effectiveRules(): TrackingRule[] {
+    return this.exercise.trackingRules.map((rule) => {
+      const override = this.restOverrides.get(rule.joint);
+      return override ? { ...rule, startRange: override } : rule;
+    });
+  }
+
+  /**
+   * Elderly and rehab patients may rest outside the configured start range (knees that only
+   * straighten to 130°). When every joint holds still, clearly on the rest side of its target,
+   * for `restCalibrationMs`, that resting angle becomes its start window. "Clearly" means at
+   * least one target-window width away, so start and target can never overlap. Returns true
+   * when a window was adopted this frame.
+   */
+  private calibrateRest(evaluated: EvaluatedRule[], timestamp: number): boolean {
+    if (allInStartZone(evaluated)) {
+      this.restHold = null;
+      return false;
+    }
+    const band = this.config.restStabilityDeg;
+    const hold = this.restHold;
+    const still =
+      hold !== null &&
+      evaluated.every(
+        (rule) =>
+          rule.currentAngle !== undefined &&
+          Math.abs(rule.currentAngle - (hold.angles.get(rule.joint) ?? Number.NaN)) <= band,
+      );
+    if (!hold || !still) {
+      this.restHold = {
+        since: timestamp,
+        angles: new Map(evaluated.map((rule) => [rule.joint, rule.currentAngle ?? Number.NaN])),
+      };
+      return false;
+    }
+    if (timestamp - hold.since < this.config.restCalibrationMs) return false;
+
+    const windows = new Map<string, { min: number; max: number }>();
+    for (const rule of this.exercise.trackingRules) {
+      const angle = hold.angles.get(rule.joint);
+      if (angle === undefined || !Number.isFinite(angle)) return false;
+      const target = targetRange(rule);
+      const width = Math.max(1, target.max - target.min);
+      if (concentricDirection(rule) === 'decreasing') {
+        if (angle < target.max + width) return false;
+        windows.set(rule.joint, { min: Math.max(target.max + 1, angle - band), max: 180 });
+      } else {
+        if (angle > target.min - width) return false;
+        windows.set(rule.joint, { min: 0, max: Math.min(target.min - 1, angle + band) });
+      }
+    }
+    this.restOverrides = windows;
+    this.restHold = null;
+    return true;
   }
 
   private advanceState(evaluated: EvaluatedRule[], timestamp: number): void {
     const holdSeconds = maxHoldSeconds(this.exercise);
     const atStart = allInStartZone(evaluated);
-    const atTarget = allInTargetZone(evaluated);
+    // Reaching the window, or going through it and beyond, both count as reaching the target.
+    const atTarget = allReachedTarget(evaluated);
 
     switch (this.internalPhase) {
       case 'idle_at_start': {
@@ -172,10 +252,14 @@ export class RepDetector {
         if (this.primedAtStart) {
           this.repCycleStarted = true;
           this.internalPhase = 'concentric';
+          this.attemptBest.clear();
+          this.missedFeedback = null;
+          this.trackAttempt(evaluated);
         }
         break;
       }
       case 'concentric': {
+        this.trackAttempt(evaluated);
         if (atTarget) {
           this.holdStartedAt = timestamp;
           if (holdSeconds <= 0) {
@@ -187,6 +271,7 @@ export class RepDetector {
           break;
         }
         if (atStart) {
+          this.missedFeedback = this.describeMissedAttempt();
           this.internalPhase = 'idle_at_start';
           this.repCycleStarted = false;
           this.primedAtStart = true;
@@ -234,6 +319,53 @@ export class RepDetector {
     }
   }
 
+  /** Remember how far each joint got toward its target during this attempt. */
+  private trackAttempt(evaluated: EvaluatedRule[]): void {
+    for (const rule of evaluated) {
+      if (!rule.available || rule.currentAngle === undefined) continue;
+      const source = this.effectiveRules().find((entry) => entry.joint === rule.joint);
+      if (!source) continue;
+      const decreasing = concentricDirection(source) === 'decreasing';
+      const previous = this.attemptBest.get(rule.joint);
+      const better =
+        previous === undefined ||
+        (decreasing ? rule.currentAngle < previous : rule.currentAngle > previous);
+      if (better) this.attemptBest.set(rule.joint, rule.currentAngle);
+    }
+  }
+
+  /** "Rep not counted: right knee reached 106° (needs 80–100°)" for each joint that fell short. */
+  private describeMissedAttempt(): string | null {
+    const rules = this.effectiveRules();
+    // Only a deliberate attempt is worth explaining: some joint must have covered enough of
+    // the way from its start zone to its target window.
+    const progress = rules.map((rule) => {
+      const best = this.attemptBest.get(rule.joint);
+      if (best === undefined) return 0;
+      const target = targetRange(rule);
+      const start = startRange(rule, 0);
+      return concentricDirection(rule) === 'decreasing'
+        ? (start.min - best) / Math.max(1, start.min - target.max)
+        : (best - start.max) / Math.max(1, target.min - start.max);
+    });
+    if (Math.max(...progress) < this.config.missedAttemptMinProgress) return null;
+
+    const short: string[] = [];
+    for (const rule of rules) {
+      const best = this.attemptBest.get(rule.joint);
+      if (best === undefined) continue;
+      const range = targetRange(rule);
+      const decreasing = concentricDirection(rule) === 'decreasing';
+      const reached = decreasing ? best <= range.max : best >= range.min;
+      if (!reached) {
+        short.push(
+          `${jointDisplayName(rule.joint)} reached ${Math.round(best)}° (needs ${Math.round(range.min)}–${Math.round(range.max)}°)`,
+        );
+      }
+    }
+    return short.length > 0 ? `Rep not counted: ${short.join(', ')}` : null;
+  }
+
   private publicPhaseForInternal(phase: InternalPhase): RepPhase {
     switch (phase) {
       case 'idle_at_start':
@@ -263,7 +395,7 @@ export class RepDetector {
       case 'concentric':
         return anyMovingTowardTarget(evaluated) || averageConcentricProgress(evaluated) > 0.05;
       case 'at_target': {
-        if (!allInTargetZone(evaluated)) return false;
+        if (!allReachedTarget(evaluated)) return false;
         const holdSeconds = maxHoldSeconds(this.exercise);
         if (holdSeconds <= 0) return true;
         return (
@@ -314,6 +446,7 @@ export class RepDetector {
     valid: boolean,
   ): string {
     if (phase === 'idle_at_start') {
+      if (this.missedFeedback) return this.missedFeedback;
       if (!this.primedAtStart) return 'Return to starting position';
       if (allInStartZone(evaluated)) return 'Good';
       return 'Return to starting position';
@@ -321,7 +454,7 @@ export class RepDetector {
 
     if (phase === 'concentric') {
       const lagging = [...evaluated]
-        .filter((rule) => rule.available && !rule.inTargetZone)
+        .filter((rule) => rule.available && !rule.inTargetZone && !rule.pastTargetZone)
         .sort((a, b) => a.concentricProgress - b.concentricProgress)[0];
       if (lagging) {
         const rule = this.exercise.trackingRules.find((entry) => entry.joint === lagging.joint);

@@ -1,19 +1,20 @@
 import type { ReactNode } from 'react';
 import { useSmartMirrorWindow } from '../../hooks/useSmartMirrorWindow';
-import { MirrorHandNavigationLayer } from '../smartMirror/MirrorHandNavigationLayer';
+import { MirrorHandNavigationLayer, MirrorHandStatusBanner } from '../smartMirror/MirrorHandNavigationLayer';
 import { SmartMirrorPublisher } from '../smartMirror/SmartMirrorPublisher';
 import { KioskScreenRotate } from './KioskScreenRotate';
 
 interface AppShellProps {
   children: ReactNode;
-  /** Portrait rotation. The live exercise session turns this off. */
-  rotate?: boolean;
 }
 
 /**
  * Full-screen kiosk shell for the vertical Smart Mirror experience (no clinical sidebar).
+ * Every page, the exercise session and the games included, sits on the same portrait
+ * stage as the analysis page. The hand pointer stays outside it (window coordinates);
+ * its hints sit inside it so they read upright.
  */
-export function AppShell({ children, rotate = true }: AppShellProps) {
+export function AppShell({ children }: AppShellProps) {
   const mirror = useSmartMirrorWindow();
   const publisher = mirror.phase === 'open' ? <SmartMirrorPublisher /> : null;
 
@@ -21,7 +22,10 @@ export function AppShell({ children, rotate = true }: AppShellProps) {
     <>
       {publisher}
       <MirrorHandNavigationLayer>
-        <KioskScreenRotate enabled={rotate}>{children}</KioskScreenRotate>
+        <KioskScreenRotate>
+          {children}
+          <MirrorHandStatusBanner />
+        </KioskScreenRotate>
       </MirrorHandNavigationLayer>
     </>
   );

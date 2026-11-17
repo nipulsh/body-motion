@@ -36,16 +36,21 @@ vi.mock('../../workflow/WorkflowContext', () => ({
   }),
 }));
 
+const viewerProps = vi.hoisted(() => ({ current: null as Record<string, unknown> | null }));
+
 vi.mock('../../bodyExplorer/BodyExplorerViewer', () => ({
   BodyExplorerViewer: ({
     highlightMeshNames = [],
     className,
     handControl = false,
+    ...rest
   }: {
     highlightMeshNames?: string[];
     className?: string;
     handControl?: boolean;
+    [key: string]: unknown;
   }) => (
+    (viewerProps.current = { highlightMeshNames, className, handControl, ...rest }),
     <div
       data-testid="body-explorer-viewer"
       className={className}
@@ -103,6 +108,37 @@ describe('SmartMirrorResultsScreen', () => {
     container.remove();
   });
 
+  it('never shows the clinician-only measurement note to the patient (#8)', () => {
+    workflow.state.analysis = {
+      ...analysisWithMuscles(),
+      measurementConflict: 'The AI analysis did not account for a measured deviation: knee',
+    } as typeof workflow.state.analysis;
+    act(() => {
+      root.render(<SmartMirrorResultsScreen />);
+    });
+    expect(container.textContent).not.toMatch(/did not account for/);
+  });
+
+  it('numbers each muscle in the list and on the mirror anatomy map', () => {
+    act(() => {
+      root.render(<SmartMirrorResultsScreen />);
+    });
+    const badges = [...container.querySelectorAll('[data-testid^="finding-number-"]')].map((el) => el.textContent);
+    expect(badges).toEqual(['1', '2']);
+    expect((viewerProps.current!.markers as Array<{ number: number }>).map((m) => m.number)).toEqual([1, 2]);
+    expect(viewerProps.current!.handControl).toBe(true);
+  });
+
+  it('zooms to the selected muscle and resets back to all muscles', () => {
+    workflow.state.selectedMuscleIndex = 1;
+    act(() => {
+      root.render(<SmartMirrorResultsScreen />);
+    });
+    expect(viewerProps.current!.focusMeshNames).toEqual(['Deltoid_R']);
+    act(() => (viewerProps.current!.onResetView as () => void)());
+    expect(workflow.dispatch).toHaveBeenCalledWith({ type: 'SET_SELECTED_MUSCLE', index: null });
+  });
+
   it('renders backend analysis fields', () => {
     act(() => {
       root.render(<SmartMirrorResultsScreen />);
@@ -138,5 +174,17 @@ describe('SmartMirrorResultsScreen', () => {
     act(() => home?.click());
     expect(workflow.dispatch).toHaveBeenCalledWith({ type: 'SET_SELECTED_MUSCLE', index: null });
     expect(workflow.dispatch).toHaveBeenCalledWith({ type: 'SET_STAGE', stage: 'mirror_home' });
+  });
+
+  it('selects a muscle group so only that group is shown on the skeleton', () => {
+    workflow.state.selectedMuscleIndex = 1;
+    act(() => {
+      root.render(<SmartMirrorResultsScreen />);
+    });
+    const viewer = container.querySelector('[data-testid="body-explorer-viewer"]');
+    expect(viewer?.getAttribute('data-highlight-meshes')).toBe('Deltoid_R');
+    const muscle = container.querySelector<HTMLButtonElement>('[data-testid="mirror-muscle-0"]');
+    act(() => muscle?.click());
+    expect(workflow.dispatch).toHaveBeenCalledWith({ type: 'SET_SELECTED_MUSCLE', index: 0 });
   });
 });

@@ -16,6 +16,8 @@ export const COUNTDOWN_STEP_MS: Record<CountdownStep, number> = {
 };
 
 export type ExerciseSessionPhase =
+  /** Squat or lunge: the patient picks front or side (and, for side, a model) before the first set. */
+  | 'choose_model'
   | 'countdown'
   | 'active'
   | 'paused'

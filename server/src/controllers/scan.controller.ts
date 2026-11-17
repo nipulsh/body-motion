@@ -17,11 +17,13 @@ import {
   serializePatientImage,
   serializePatientModel,
   serializeScan,
+  updateScanPostureMetrics,
   updateScanStatus,
 } from '../repositories/scan.repository';
 import { startScanProcessing } from '../services/scans/scanProcess.service';
 import { patientIdParamSchema } from '../schemas/common.schema';
 import { createScanBodySchema, scanIdParamSchema } from '../schemas/scan.schema';
+import { parsePostureMetricsField } from '../config/postureMetricRules';
 import { scanImagePath, scanModelPath } from '../services/storage/paths';
 import { createSignedUrl, deleteObjects, uploadObject } from '../services/storage/storage.service';
 import type {
@@ -32,6 +34,12 @@ import type {
 } from '../types/api';
 import { AppError, toErrorMessage } from '../utils/AppError';
 import { asyncHandler } from '../utils/asyncHandler';
+import {
+  analysisPossibleOf,
+  deformitiesOf,
+  measurementConflictOf,
+  serializeMuscleFindings,
+} from '../utils/muscleContribution';
 import { prismaSideToApi } from '../utils/bodySide';
 import { logger } from '../utils/logger';
 import { requirePatientForHospital, requireScanForHospital } from '../utils/patientAccess';
@@ -175,17 +183,11 @@ export const getScanAnalysisHandler = asyncHandler(async (req: Request, res: Res
     observedDeformation: result.observedDeformation,
     affectedSide: prismaSideToApi(result.affectedSide),
     summary: result.summary,
-    muscles: result.muscleFindings.map((muscle) => ({
-      name: muscle.name,
-      side: prismaSideToApi(muscle.side),
-      likelihood: muscle.likelihood,
-      deformation: muscle.deformation,
-      intensity: muscle.intensity,
-      reason: muscle.reason,
-      bodyExplorerId: muscle.bodyExplorerId || undefined,
-      bodyExplorerMeshNames:
-        muscle.bodyExplorerMeshNames.length > 0 ? muscle.bodyExplorerMeshNames : undefined,
-    })),
+    analysisPossible: analysisPossibleOf(result.parsed),
+    deformities: deformitiesOf(result.parsed),
+    muscles: serializeMuscleFindings(result.muscleFindings, prismaSideToApi),
+    // Clinician-only: shown on clinician screens, never on the patient-facing mirror.
+    measurementConflict: measurementConflictOf(result.parsed),
   });
 });
 
@@ -232,8 +234,11 @@ export const uploadScanImagesHandler = asyncHandler(async (req: Request, res: Re
   }
   const files = validateScanUploadedImages(rawFiles, scan.type);
   const angles = parseUploadAngles(req.body?.angles, files.length);
+  const postureMetrics = parsePostureMetricsField(req.body?.postureMetrics, { uploadedImages: files.length });
 
   await updateScanStatus(scanId, { status: 'UPLOADING', error: null });
+  // Replaced on every upload so a re-capture never keeps the previous session's measurements.
+  await updateScanPostureMetrics(scanId, postureMetrics);
 
   const removedImages = await clearScanImagesForReupload(scanId);
   if (removedImages.length > 0) {

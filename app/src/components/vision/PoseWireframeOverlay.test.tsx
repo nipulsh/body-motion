@@ -6,6 +6,7 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { setTrackedHands } from '@vision/hand/handLandmarksBus';
+import { DEFAULT_MIRROR_GEOMETRY } from '@vision/pose/mirrorReflection';
 import { PoseWireframeOverlay, type PoseWireframeOverlayHandle } from './PoseWireframeOverlay';
 
 const drawPoseWireframe = vi.hoisted(() => vi.fn());
@@ -145,4 +146,109 @@ describe('PoseWireframeOverlay mirror drawing', () => {
       }),
     );
   });
+  it('switches to mirror reflection placement only when mirrorGeometry is set', () => {
+    const geometry = { ...DEFAULT_MIRROR_GEOMETRY };
+    const pose = {
+      landmarks: Array.from({ length: 33 }, (_, index) =>
+        index === 11 ? { x: 0.4, y: 0.4, z: 0, visibility: 0.95 } : { x: 0.5, y: 0.5, z: 0, visibility: 0 },
+      ),
+      confidence: 1,
+      timestamp: 1,
+    };
+
+    for (const mirrorGeometry of [geometry, null]) {
+      drawPoseWireframe.mockClear();
+      const ref = createRef<PoseWireframeOverlayHandle>();
+      act(() => {
+        root.render(
+          <PoseWireframeOverlay key={String(Boolean(mirrorGeometry))} ref={ref} mirrorX mirrorGeometry={mirrorGeometry} />,
+        );
+      });
+      act(() => {
+        ref.current?.draw(pose, { width: 1280, height: 720 });
+      });
+      const options = drawPoseWireframe.mock.calls.at(-1)![2];
+      expect(options.visibleMask[11]).toBe(true);
+      if (mirrorGeometry) expect(typeof options.project).toBe('function');
+      else expect(options.project).toBeUndefined();
+    }
+  });
+
+  it('draws nothing in mirror mode until the camera frame size is known', () => {
+    const ref = createRef<PoseWireframeOverlayHandle>();
+    act(() => {
+      root.render(<PoseWireframeOverlay ref={ref} mirrorX mirrorGeometry={DEFAULT_MIRROR_GEOMETRY} />);
+    });
+    drawPoseWireframe.mockClear();
+    act(() => {
+      ref.current?.draw({ landmarks: [{ x: 0.5, y: 0.5, z: 0, visibility: 1 }], confidence: 1, timestamp: 1 }, null);
+    });
+    expect(drawPoseWireframe).not.toHaveBeenCalled();
+  });
+  it('reports the tracked viewer in mirror mode and null otherwise', () => {
+    const pose = {
+      landmarks: Array.from({ length: 33 }, (_, index) =>
+        index === 2 || index === 5
+          ? { x: 0.5, y: 0.45, z: 0, visibility: 0.95 }
+          : { x: 0.5, y: 0.5, z: 0, visibility: 0 },
+      ),
+      confidence: 1,
+      timestamp: 1,
+    };
+    for (const mirrorGeometry of [DEFAULT_MIRROR_GEOMETRY, null]) {
+      const onViewer = vi.fn();
+      const ref = createRef<PoseWireframeOverlayHandle>();
+      act(() => {
+        root.render(
+          <PoseWireframeOverlay
+            key={String(Boolean(mirrorGeometry))}
+            ref={ref}
+            mirrorX
+            mirrorGeometry={mirrorGeometry}
+            onViewer={onViewer}
+          />,
+        );
+      });
+      act(() => {
+        ref.current?.draw(pose, { width: 1280, height: 720 });
+      });
+      const viewer = onViewer.mock.calls.at(-1)![0];
+      if (mirrorGeometry) {
+        expect(viewer.eye.h).toBeGreaterThan(0);
+        expect(viewer.eye.h).toBeLessThan(DEFAULT_MIRROR_GEOMETRY.defaultEyeHeightIn);
+        // First sighting: the standing height is this viewer's own eye height.
+        expect(viewer.standingEyeHeightIn).toBeCloseTo(viewer.eye.h, 6);
+        expect(viewer.distanceIn).toBe(DEFAULT_MIRROR_GEOMETRY.userDistanceIn);
+      } else {
+        expect(viewer).toBeNull();
+      }
+    }
+  });
+
+  it('advances the filters once per pose, not again when only the frame size changes', () => {
+    const onViewer = vi.fn();
+    const pose = { landmarks: [{ x: 0.5, y: 0.5, z: 0, visibility: 1 }], confidence: 1, timestamp: 1 };
+    act(() => {
+      root.render(
+        <PoseWireframeOverlay
+          pose={pose}
+          sourceFrame={{ width: 1280, height: 720 }}
+          mirrorGeometry={DEFAULT_MIRROR_GEOMETRY}
+          onViewer={onViewer}
+        />,
+      );
+    });
+    act(() => {
+      root.render(
+        <PoseWireframeOverlay
+          pose={pose}
+          sourceFrame={{ width: 1920, height: 1080 }}
+          mirrorGeometry={DEFAULT_MIRROR_GEOMETRY}
+          onViewer={onViewer}
+        />,
+      );
+    });
+    expect(onViewer).toHaveBeenCalledTimes(1);
+  });
+
 });

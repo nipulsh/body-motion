@@ -24,6 +24,7 @@
       "@vision": ["../vision/index.ts"],
       "@vision/*": ["../vision/*"],
       "@mediapipe/tasks-vision": ["./node_modules/@mediapipe/tasks-vision"],
+      "onnxruntime-web/webgpu": ["./node_modules/onnxruntime-web/types.d.ts"],
       "vitest": ["./node_modules/vitest"]
     }
   },

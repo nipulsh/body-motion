@@ -1,0 +1,41 @@
+{
+  "roundSeconds": 180,
+  "levels": [
+    {
+      "id": "L1", "name": "One colour",
+      "rules": ["R1"], "ruleChangeSeconds": null,
+      "colourPhases": [{ "until": 90, "colours": ["blue"] }, { "until": 180, "colours": ["red"] }],
+      "spawnEvery": 3.0, "lifetime": 9, "radius": 0.22, "speed": 0.05,
+      "crossingFraction": 0, "goldEvery": 0, "distractorEvery": 0,
+      "midlineHint": true, "march": false
+    },
+    {
+      "id": "L2", "name": "Two colours",
+      "rules": ["R1"], "ruleChangeSeconds": null, "colourPhases": null,
+      "spawnEvery": 2.4, "lifetime": 8, "radius": 0.2, "speed": 0.07,
+      "crossingFraction": 0, "goldEvery": 0, "distractorEvery": 0,
+      "midlineHint": true, "march": false
+    },
+    {
+      "id": "L3", "name": "Cross over",
+      "rules": ["R1"], "ruleChangeSeconds": null, "colourPhases": null,
+      "spawnEvery": 2.2, "lifetime": 7, "radius": 0.18, "speed": 0.09,
+      "crossingFraction": 0.5, "goldEvery": 8, "distractorEvery": 0,
+      "midlineHint": true, "march": false
+    },
+    {
+      "id": "L4", "name": "Rule changes",
+      "rules": ["R1", "R2", "R3", "R4"], "ruleChangeSeconds": 30, "colourPhases": null,
+      "spawnEvery": 1.8, "lifetime": 6, "radius": 0.16, "speed": 0.11,
+      "crossingFraction": 0.5, "goldEvery": 8, "distractorEvery": 6,
+      "midlineHint": false, "march": false
+    },
+    {
+      "id": "L5", "name": "Dual task",
+      "rules": ["R1", "R2", "R3", "R4", "R5", "R6"], "ruleChangeSeconds": 30, "colourPhases": null,
+      "spawnEvery": 1.5, "lifetime": 5, "radius": 0.15, "speed": 0.13,
+      "crossingFraction": 0.5, "goldEvery": 8, "distractorEvery": 6,
+      "midlineHint": false, "march": true
+    }
+  ]
+}

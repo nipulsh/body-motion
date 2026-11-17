@@ -4,6 +4,7 @@ import {
   formatMirrorRepCount,
   mirrorExerciseSnapshot,
   mirrorSnapshotsEqual,
+  mirrorPanelFollowOffset,
 } from './smartMirrorExercise';
 
 function exercise(overrides: Partial<Exercise> = {}): Exercise {
@@ -91,5 +92,20 @@ describe('mirror exercise snapshot', () => {
 
     expect(mirrorSnapshotsEqual(current, next)).toBe(true);
     expect(mirrorSnapshotsEqual(current, changed)).toBe(false);
+  });
+});
+describe('mirrorPanelFollowOffset', () => {
+  it('moves the panel down by the same amount as the eyes', () => {
+    expect(mirrorPanelFollowOffset(0, 38, 600, 1920)).toBe(0);
+    expect(mirrorPanelFollowOffset(250, 38, 600, 1920)).toBe(250);
+  });
+
+  it('stops when the panel reaches the bottom of the screen', () => {
+    expect(mirrorPanelFollowOffset(5000, 38, 600, 1920)).toBe(1920 - 38 - 600);
+  });
+
+  it('never moves the panel up', () => {
+    expect(mirrorPanelFollowOffset(-100, 38, 600, 1920)).toBe(0);
+    expect(mirrorPanelFollowOffset(100, 38, 2000, 1920)).toBe(0);
   });
 });

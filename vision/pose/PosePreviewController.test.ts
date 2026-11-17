@@ -57,6 +57,70 @@ describe('PosePreviewController', () => {
     expect(frames).toEqual([expect.any(Object), null]);
   });
 
+  it('reports an empty mirror once the camera is live and nobody is found', async () => {
+    const frames: Array<PoseResult | null> = [];
+    let now = 1_000;
+    const queue: FrameRequestCallback[] = [];
+    const controller = new PosePreviewController({
+      getVideo: () => video(),
+      poseDetector: {
+        initialize: async () => undefined,
+        isReady: () => true,
+        processFrame: () => null,
+        dispose: () => undefined,
+      },
+      now: () => now,
+      raf: (cb) => {
+        queue.push(cb);
+        return queue.length;
+      },
+      caf: () => {
+        queue.length = 0;
+      },
+    });
+
+    controller.subscribe((frame) => frames.push(frame.pose));
+    await controller.start();
+    expect(frames).toEqual([]);
+
+    now = 1_000 + POSE_PREVIEW_STALE_MS - 1;
+    queue.shift()?.(now);
+    expect(frames).toEqual([]);
+
+    now = 1_000 + POSE_PREVIEW_STALE_MS + 100;
+    queue.shift()?.(now);
+    expect(frames).toEqual([null]);
+  });
+
+  it('does not report nobody before the camera is ready', async () => {
+    const frames: Array<PoseResult | null> = [];
+    let now = 1_000;
+    const queue: FrameRequestCallback[] = [];
+    const controller = new PosePreviewController({
+      getVideo: () => video(0),
+      poseDetector: {
+        initialize: async () => undefined,
+        isReady: () => false,
+        processFrame: () => null,
+        dispose: () => undefined,
+      },
+      now: () => now,
+      raf: (cb) => {
+        queue.push(cb);
+        return queue.length;
+      },
+      caf: () => {
+        queue.length = 0;
+      },
+    });
+
+    controller.subscribe((frame) => frames.push(frame.pose));
+    await controller.start();
+    now = 1_000 + POSE_PREVIEW_STALE_MS * 4;
+    queue.shift()?.(now);
+    expect(frames).toEqual([]);
+  });
+
   it('does not emit after stop', async () => {
     const seen: number[] = [];
     let now = 1_000;

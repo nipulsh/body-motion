@@ -1,4 +1,5 @@
 import type {
+  CaptureStep,
   CapturedScanImage,
   OrientationResult,
   RotationDebugInfo,
@@ -42,6 +43,8 @@ export interface VisionSnapshot {
   error: VisionErrorInfo | null;
   lastEvent: VisionEventType | null;
   debugRotation: RotationDebugInfo | null;
+  /** Guided analysis capture step (front, turn right, back to the camera). Null outside that capture. */
+  captureStep: CaptureStep | null;
 }
 
 export interface VisionEventPayload {

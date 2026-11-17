@@ -1,0 +1,40 @@
+{
+  "repsPerSet": 8,
+  "sets": 2,
+  "restSeconds": 20,
+  "fruitIntervalSeconds": 0.5,
+  "maxZoneSeconds": 8,
+  "standTallHintSeconds": 8,
+  "startLoweringPct": 5,
+  "riseAboveZone": 5,
+  "topHipHeightPct": 95,
+  "topHoldSeconds": 0.3,
+  "spillIncorrectSeconds": 0.5,
+  "emptySeconds": 1.5,
+  "maxHipDropPct": 60,
+  "freeTempoDownSeconds": 1.0,
+  "hoverMenuHipHeightPct": 90,
+  "front": [
+    { "id": "F1", "name": "Sprout", "depth": [15, 25], "zoneTol": 4, "fruit": 2, "hold": 0, "tempoDown": null, "tempoUp": null, "fruitType": "cherry", "checks": ["tibia", "speed"], "tibiaWiden": 3, "strict": false },
+    { "id": "F2", "name": "Seedling", "depth": [25, 35], "zoneTol": 4, "fruit": 3, "hold": 1, "tempoDown": 2, "tempoUp": null, "fruitType": "plum", "checks": ["tibia", "pelvis", "speed"], "tibiaWiden": 0, "strict": false },
+    { "id": "F3", "name": "Sapling", "depth": [35, 45], "zoneTol": 3.5, "fruit": 4, "hold": 2, "tempoDown": 2, "tempoUp": 2, "fruitType": "apple", "checks": ["tibia", "pelvis", "bowing", "speed"], "tibiaWiden": 0, "strict": false },
+    { "id": "F4", "name": "Tree", "depth": [45, 55], "zoneTol": 3, "fruit": 5, "hold": 2, "tempoDown": 3, "tempoUp": 2, "fruitType": "orange", "checks": ["tibia", "pelvis", "bowing", "lrDiff", "speed"], "tibiaWiden": 0, "strict": false },
+    { "id": "F5", "name": "Orchard", "depth": [50, 60], "zoneTol": 3, "fruit": 6, "hold": 3, "tempoDown": 3, "tempoUp": 3, "fruitType": "golden", "checks": ["tibia", "pelvis", "bowing", "lrDiff", "heelLift", "speed"], "tibiaWiden": 0, "strict": true }
+  ],
+  "side": [
+    { "id": "S1", "name": "Sprout", "depth": [30, 45], "zoneTol": 5, "fruit": 2, "hold": 0, "tempoDown": null, "tempoUp": null, "fruitType": "cherry", "checks": ["back"], "backRange": "gentle", "strict": false },
+    { "id": "S2", "name": "Seedling", "depth": [45, 60], "zoneTol": 5, "fruit": 3, "hold": 1, "tempoDown": 2, "tempoUp": null, "fruitType": "plum", "checks": ["back", "speed"], "backRange": "gentle", "strict": false },
+    { "id": "S3", "name": "Sapling", "depth": [60, 80], "zoneTol": 4, "fruit": 4, "hold": 2, "tempoDown": 2, "tempoUp": 2, "fruitType": "apple", "checks": ["back", "shin", "speed"], "backRange": "gentle", "strict": false },
+    { "id": "S4", "name": "Tree", "depth": [80, 95], "zoneTol": 3, "fruit": 5, "hold": 2, "tempoDown": 3, "tempoUp": 2, "fruitType": "orange", "checks": ["back", "shin", "speed"], "backRange": "style", "strict": false },
+    { "id": "S5", "name": "Orchard", "depth": [90, 110], "zoneTol": 3, "fruit": 6, "hold": 3, "tempoDown": 3, "tempoUp": 3, "fruitType": "golden", "checks": ["back", "shin", "heelLift", "speed"], "backRange": "style", "strict": true }
+  ],
+  "gentleBack": [0, 40],
+  "styles": {
+    "standard": { "name": "Standard", "back": [20, 50], "shin": [20, 40], "levels": ["S1", "S2", "S3", "S4", "S5"], "depth": null, "depthCap": null },
+    "kneeBias": { "name": "Knee bias", "back": [15, 35], "shin": [35, 50], "levels": ["S1", "S2", "S3", "S4", "S5"], "depth": null, "depthCap": null },
+    "hipBias": { "name": "Hip bias", "back": [40, 60], "shin": [20, 35], "levels": ["S1", "S2", "S3", "S4", "S5"], "depth": null, "depthCap": null },
+    "longFemur": { "name": "Long femur", "back": [45, 65], "shin": [25, 40], "levels": ["S1", "S2", "S3", "S4", "S5"], "depth": null, "depthCap": null },
+    "oaGentle": { "name": "OA gentle", "back": [15, 40], "shin": [10, 30], "levels": ["S1", "S2", "S3"], "depth": null, "depthCap": 70 },
+    "boxSquat": { "name": "Box squat", "back": [30, 55], "shin": [5, 25], "levels": ["S4"], "depth": [85, 100], "depthCap": null }
+  }
+}

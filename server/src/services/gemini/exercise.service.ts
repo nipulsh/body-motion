@@ -46,6 +46,7 @@ export function buildAnalysisInputFromResult(
       deformation: muscle.deformation,
       intensity: muscle.intensity,
       reason: muscle.reason,
+      contributionPercent: muscle.contributionPercent,
     })),
   };
 }
@@ -107,7 +108,11 @@ function buildExerciseUserPrompt(input: ExerciseGenerationInput): string {
     .map(
       (muscle) =>
         `- ${muscle.name} (${muscle.side}): deformation="${muscle.deformation}", ` +
-        `likelihood=${muscle.likelihood.toFixed(2)}, intensity=${muscle.intensity.toFixed(2)} — ${muscle.reason}`,
+        `likelihood=${muscle.likelihood.toFixed(2)}, intensity=${muscle.intensity.toFixed(2)}` +
+        (muscle.contributionPercent !== undefined
+          ? `, contribution=${muscle.contributionPercent.toFixed(1)}%`
+          : '') +
+        ` — ${muscle.reason}`,
     )
     .join('\n');
 

@@ -35,6 +35,10 @@ export class PosePreviewController {
   private lastFrameAt = 0;
   private lastGoodAt = 0;
   private cleared = true;
+  /** True once a live camera has been seen, so an empty mirror can be reported before anyone stands there. */
+  private armed = false;
+  /** Frame-rate override (e.g. 30 fps for rhythm games); null uses the shared config. */
+  private fpsOverride: number | null = null;
 
   constructor(deps: PosePreviewControllerDeps) {
     this.getVideo = deps.getVideo;
@@ -55,6 +59,11 @@ export class PosePreviewController {
     return this.active;
   }
 
+  /** Process frames at this rate instead of the shared default; null restores it. */
+  setFps(fps: number | null): void {
+    this.fpsOverride = fps !== null && Number.isFinite(fps) && fps > 0 ? Math.min(fps, 60) : null;
+  }
+
   async start(): Promise<void> {
     const token = ++this.startToken;
     await this.poseDetector.initialize();
@@ -64,6 +73,7 @@ export class PosePreviewController {
     this.lastFrameAt = 0;
     this.lastGoodAt = 0;
     this.cleared = true;
+    this.armed = false;
     this.loop();
   }
 
@@ -72,6 +82,7 @@ export class PosePreviewController {
     this.active = false;
     this.lastGoodAt = 0;
     this.cleared = true;
+    this.armed = false;
     if (this.rafId) {
       this.caf(this.rafId);
       this.rafId = 0;
@@ -82,7 +93,7 @@ export class PosePreviewController {
     if (!this.active) return;
 
     const timestamp = this.now();
-    const minIntervalMs = 1000 / VISION_CONFIG.motion.processingFps;
+    const minIntervalMs = 1000 / (this.fpsOverride ?? VISION_CONFIG.motion.processingFps);
     if (timestamp - this.lastFrameAt >= minIntervalMs) {
       this.lastFrameAt = timestamp;
       this.process(timestamp);
@@ -101,10 +112,12 @@ export class PosePreviewController {
 
     const pose = this.poseDetector.processFrame(video, timestamp);
     if (!pose) {
+      this.noteWatching(timestamp);
       this.expire(timestamp, video);
       return;
     }
 
+    this.armed = true;
     this.lastGoodAt = timestamp;
     this.cleared = false;
     this.emit({
@@ -113,6 +126,18 @@ export class PosePreviewController {
       frameWidth: video.videoWidth,
       frameHeight: video.videoHeight,
     });
+  }
+
+  /**
+   * The camera is producing frames. Remember that moment once, so an empty mirror is reported
+   * after the stale window even when nobody has stood there yet. A camera that is not ready
+   * never reaches here, and a slow start does not count as the player having left.
+   */
+  private noteWatching(timestamp: number): void {
+    if (this.armed) return;
+    this.armed = true;
+    this.lastGoodAt = timestamp;
+    this.cleared = false;
   }
 
   private expire(timestamp: number, video: HTMLVideoElement | null): void {

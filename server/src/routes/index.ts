@@ -5,10 +5,12 @@ import hospitalRoutes from './hospital.routes';
 import jobRoutes from './job.routes';
 import patientRoutes from './patient.routes';
 import scanRoutes from './scan.routes';
+import storageRoutes from './storage.routes';
 
 const router = Router();
 
 router.use(healthRoutes);
+router.use(storageRoutes);
 router.use('/hospital', hospitalRoutes);
 router.use('/patients', patientRoutes);
 router.use('/scans', scanRoutes);

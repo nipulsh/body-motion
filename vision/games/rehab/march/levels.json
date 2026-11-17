@@ -1,0 +1,12 @@
+{
+  "roundSeconds": 120,
+  "approachSeconds": 2.0,
+  "leadInBeats": 4,
+  "levels": [
+    { "id": "L1", "name": "Slow march", "bpm": 50, "beatsPerBar": 2, "pattern": "alternate", "heights": [10], "window": 0.6 },
+    { "id": "L2", "name": "Steady march", "bpm": 60, "beatsPerBar": 2, "pattern": "alternate", "heights": [10, 15], "window": 0.5 },
+    { "id": "L3", "name": "Step up", "bpm": 70, "beatsPerBar": 1, "pattern": "alternate", "heights": [15, 25], "window": 0.4 },
+    { "id": "L4", "name": "Stride", "bpm": 80, "beatsPerBar": 1, "pattern": "alternate", "heights": [25, 35], "window": 0.3 },
+    { "id": "L5", "name": "Walk the rhythm", "bpm": 90, "beatsPerBar": 1, "pattern": "walking", "heights": [25, 35, 45], "window": 0.25 }
+  ]
+}

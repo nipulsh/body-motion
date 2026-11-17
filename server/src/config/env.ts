@@ -41,6 +41,11 @@ const envSchema = z.object({
   SUPABASE_BUCKET_MODELS: z.string().min(1).default('models'),
   SIGNED_URL_TTL_SECONDS: z.coerce.number().int().min(60).max(604800).default(3600),
 
+  STORAGE_DRIVER: z.enum(['local', 'supabase']).default('local'),
+  LOCAL_STORAGE_DIR: z.string().min(1).default('storage'),
+  PUBLIC_BASE_URL: z.string().url().optional(),
+  LOCAL_STORAGE_SIGNING_SECRET: z.string().min(1).optional(),
+
   GEMINI_API_KEY: z.string().min(1, 'GEMINI_API_KEY is required'),
   GEMINI_ANALYSIS_MODEL: z.string().min(1).default('gemini-3.6-flash'),
   GEMINI_IMAGE_MODEL: z.string().min(1).default('gemini-2.5-flash-image'),
@@ -107,6 +112,11 @@ export const env = {
   referenceModelImageAbsolutePath: path.isAbsolute(parsed.REFERENCE_MODEL_IMAGE_PATH)
     ? parsed.REFERENCE_MODEL_IMAGE_PATH
     : path.resolve(process.cwd(), parsed.REFERENCE_MODEL_IMAGE_PATH),
+  localStorageDir: path.isAbsolute(parsed.LOCAL_STORAGE_DIR)
+    ? parsed.LOCAL_STORAGE_DIR
+    : path.resolve(process.cwd(), parsed.LOCAL_STORAGE_DIR),
+  publicBaseUrl: parsed.PUBLIC_BASE_URL ?? `http://localhost:${parsed.PORT}`,
+  localStorageSigningSecret: parsed.LOCAL_STORAGE_SIGNING_SECRET ?? parsed.SUPABASE_SERVICE_ROLE_KEY,
 } as const;
 
 export type Env = typeof env;

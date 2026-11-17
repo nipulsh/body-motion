@@ -187,7 +187,7 @@ describe('SmartMirrorAnalysisScreen', () => {
     expect(prep).not.toBeNull();
     expect(prep?.className).toContain('bg-black');
     expect(prep?.className).not.toMatch(/bg-black\/\d+/);
-    expect(prep?.textContent).toContain('Stand facing the camera');
+    expect(prep?.textContent).toContain('Stand straight facing the camera');
     expectBlackStageWithoutVisibleVideo();
     expect(speak).toHaveBeenCalled();
 

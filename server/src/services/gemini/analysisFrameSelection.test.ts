@@ -16,7 +16,7 @@ describe('buildGeminiAnalysisInputs', () => {
 
     const inputs = buildGeminiAnalysisInputs('TIMED_BURST', images);
     expect(inputs.length).toBe(TIMED_BURST_GEMINI_ANALYSIS_FRAMES);
-    expect(inputs[0]?.label).toContain('video frame');
+    expect(inputs[0]?.label).toContain('Patient frame');
   });
 
   it('passes through all body 360 images', () => {

@@ -144,6 +144,8 @@ model Scan {
   type      ScanType   @default(BODY_360)
   status    ScanStatus @default(CREATED)
   error     String?
+  /// Objective posture measurements from the client's pose landmarks (PostureMetricsSummary).
+  postureMetrics Json?
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
@@ -264,6 +266,8 @@ model MuscleFinding {
   deformation      String
   intensity        Float
   reason           String
+  /// Share (0–100) of the observed deformity attributed to this muscle; findings of one analysis sum to 100.
+  contributionPercent Float @default(0)
   /// GLB node name in BodyExplorer's anatomy.glb; empty when the muscle spans several meshes.
   bodyExplorerId   String   @default("")
   /// Every BodyExplorer mesh that makes up this muscle.

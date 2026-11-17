@@ -3,18 +3,25 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import type { ComponentProps } from 'react';
 import { cn } from '@/lib/utils';
 
+/**
+ * Hover: each variant changes to its own hover colour (theme tokens `--*-hover` in app.css).
+ * Filled and outline buttons also lift by 1px with a soft shadow and settle back when
+ * pressed; ghost and link buttons stay flat because
+ * they sit inside toolbars and running text. The lift only runs under `motion-safe`, and
+ * transitions are limited to colour, shadow and transform (150ms ease-out).
+ */
+const LIFT = 'motion-safe:hover:-translate-y-px hover:shadow-md active:translate-y-0 active:shadow-xs';
+
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-150 ease-out outline-none motion-reduce:transition-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
-        default: 'bg-primary text-primary-foreground shadow-xs hover:bg-primary/90',
-        destructive:
-          'bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20',
-        outline:
-          'border border-black bg-white text-black shadow-xs hover:bg-neutral-50 hover:text-black',
-        secondary: 'bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80',
-        ghost: 'hover:bg-accent hover:text-accent-foreground',
+        default: `bg-primary text-primary-foreground shadow-xs hover:bg-primary-hover active:bg-primary-hover/90 ${LIFT}`,
+        destructive: `bg-destructive text-white shadow-xs hover:bg-destructive-hover active:bg-destructive-hover/90 focus-visible:ring-destructive/20 ${LIFT}`,
+        outline: `border border-black bg-white text-black shadow-xs hover:bg-outline-hover hover:text-black active:bg-outline-hover/90 ${LIFT}`,
+        secondary: `bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary-hover active:bg-secondary-hover/90 ${LIFT}`,
+        ghost: 'hover:bg-accent hover:text-accent-foreground active:bg-accent/80',
         link: 'text-primary underline-offset-4 hover:underline',
       },
       size: {

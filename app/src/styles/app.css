@@ -23,6 +23,10 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
+  --color-primary-hover: var(--primary-hover);
+  --color-destructive-hover: var(--destructive-hover);
+  --color-secondary-hover: var(--secondary-hover);
+  --color-outline-hover: var(--outline-hover);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -56,9 +60,15 @@
   --secondary-foreground: #000000;
   --muted: #000000;
   --muted-foreground: oklch(0.72 0.02 240);
-  --accent: #000000;
+  /* Hover surface for ghost buttons and list rows: was #000000, invisible on the black background. */
+  --accent: oklch(1 0 0 / 12%);
   --accent-foreground: oklch(0.97 0.01 240);
   --destructive: oklch(0.65 0.2 20);
+  /* Button hover colours: change these to retheme every button's hover state. */
+  --primary-hover: oklch(0.88 0.13 215);
+  --destructive-hover: oklch(0.52 0.2 22);
+  --secondary-hover: oklch(0.86 0.02 240);
+  --outline-hover: oklch(0.92 0.05 230);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 12%);
   --ring: oklch(0.78 0.12 230);
@@ -95,6 +105,12 @@
 
   body {
     @apply bg-background font-sans text-foreground antialiased;
+  }
+
+  /* Tailwind v4 dropped the pointer cursor on buttons; restore it for plain <button>s too. */
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']) {
+    cursor: pointer;
   }
 }
 

@@ -15,6 +15,27 @@ export function hipMidpointNormalized(pose: PoseResult | null): { x: number; y: 
   return { x: (left.x + right.x) / 2, y: (left.y + right.y) / 2 };
 }
 
+/**
+ * Normalized picture point → canvas pixels when the picture fills the canvas height and
+ * is centred across it: a narrower picture leaves the sides empty, a wider one is cropped
+ * at the sides (points there land outside the canvas).
+ */
+export function mapNormalizedToFitHeight(
+  xNorm: number,
+  yNorm: number,
+  canvasWidth: number,
+  canvasHeight: number,
+  sourceWidth: number,
+  sourceHeight: number,
+): CanvasPoint {
+  const pictureWidth = (canvasHeight * sourceWidth) / sourceHeight;
+  const left = (canvasWidth - pictureWidth) / 2;
+  return { x: left + xNorm * pictureWidth, y: yNorm * canvasHeight };
+}
+
+/** How the camera picture sits on the canvas: whole picture (contain) or full height. */
+export type PictureFit = 'contain' | 'height';
+
 export function mapPoseHipToCanvas(
   pose: PoseResult | null,
   canvasWidth: number,
@@ -22,11 +43,15 @@ export function mapPoseHipToCanvas(
   sourceWidth: number,
   sourceHeight: number,
   mirrorX = true,
+  fit: PictureFit = 'contain',
 ): CanvasPoint | null {
   const hip = hipMidpointNormalized(pose);
   if (!hip) return null;
   const xNorm = mirrorX ? 1 - hip.x : hip.x;
   if (sourceWidth > 0 && sourceHeight > 0) {
+    if (fit === 'height') {
+      return mapNormalizedToFitHeight(xNorm, hip.y, canvasWidth, canvasHeight, sourceWidth, sourceHeight);
+    }
     return mapNormalizedToContainCanvas(
       xNorm,
       hip.y,

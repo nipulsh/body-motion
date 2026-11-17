@@ -1,3 +1,4 @@
+import { summarizePosture, type PoseResult } from '@vision';
 import type { AnalysisResponse } from './types';
 import { apiFetch, apiUploadWithProgress } from './client';
 import type {
@@ -82,7 +83,7 @@ export async function getScanModels(scanId: string): Promise<ListScanModelsRespo
 
 export async function uploadScanImages(
   scanId: string,
-  images: Array<Blob | { blob: Blob; angleDeg?: number }>,
+  images: Array<Blob | { blob: Blob; angleDeg?: number; pose?: PoseResult }>,
   onProgress?: (loaded: number, total: number) => void,
 ): Promise<UploadScanImagesResponse> {
   if (images.length === 0) {
@@ -90,7 +91,9 @@ export async function uploadScanImages(
   }
 
   const normalized = images.map((entry) =>
-    entry instanceof Blob ? { blob: entry, angleDeg: undefined as number | undefined } : entry,
+    entry instanceof Blob
+      ? { blob: entry, angleDeg: undefined as number | undefined, pose: undefined as PoseResult | undefined }
+      : entry,
   );
 
   const formData = new FormData();
@@ -107,6 +110,10 @@ export async function uploadScanImages(
     );
   });
   formData.append('angles', JSON.stringify(angles));
+  // Objective, camera-tilt-independent posture measurements so the analysis can name the
+  // body part that actually deviates instead of guessing from pixels alone.
+  const posture = summarizePosture(normalized.map((entry) => entry.pose));
+  if (posture) formData.append('postureMetrics', JSON.stringify(posture));
 
   const text = await apiUploadWithProgress(
     `/api/scans/${scanId}/images`,

@@ -1,38 +1,68 @@
-import { ArrowLeft, Bird } from 'lucide-react';
+import { MIRROR_GESTURE_TARGET_ATTR } from '@vision/hand/gestureTargets';
 import { useWorkflow } from '../../workflow/WorkflowContext';
+import { mirrorGestureMenuButtonClass, mirrorGestureNavClass } from '../smartMirror/mirrorGestureButton';
+import { MirrorPortraitCard } from '../smartMirror/MirrorPortraitCard';
+import { mirrorTopZoneClass } from '../smartMirror/mirrorTopZone';
 import { Button } from '../ui/button';
+import { cn } from '@/lib/utils';
 
 export function GamesPlaceholderScreen() {
   const { dispatch } = useWorkflow();
 
+  // The rehab games (Fruit Catcher, Cross-Over Bubbles, March to the Beat) share
+  // one home screen with its own game picker, so the menu needs one entry.
+  const openRehab = () => dispatch({ type: 'SET_STAGE', stage: 'rehab_games' });
+
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center bg-black px-8 py-12 text-center text-white">
-      <p className="text-sm font-medium uppercase tracking-[0.35em] text-white/60">Games</p>
-      <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">Smart Mirror</h1>
-      <p className="mt-6 max-w-md text-lg text-white/75">Pick a lightweight game. More coming later.</p>
-
-      <Button
-        type="button"
-        variant="secondary"
-        data-testid="play-balance-bird"
-        className="mt-10 flex h-auto min-h-[5.5rem] w-full max-w-md flex-col gap-2 rounded-2xl border border-white/15 bg-white/10 px-8 py-6 text-lg font-semibold text-white hover:bg-white/15"
-        onClick={() => dispatch({ type: 'SET_STAGE', stage: 'balance_bird_game' })}
+    <MirrorPortraitCard testId="mirror-games-card">
+      <nav
+        className={cn(mirrorGestureNavClass, mirrorTopZoneClass)}
+        aria-label="Games"
       >
-        <Bird className="size-8" aria-hidden />
-        Balance birds
-        <span className="text-sm font-normal text-white/70">Stand on one leg while birds fly by</span>
-      </Button>
+        <Button
+          type="button"
+          variant="outline"
+          data-testid="play-balance-bird"
+          {...{ [MIRROR_GESTURE_TARGET_ATTR]: 'true' }}
+          className={cn(mirrorGestureMenuButtonClass)}
+          onClick={() => dispatch({ type: 'SET_STAGE', stage: 'balance_bird_game' })}
+        >
+          Balance birds
+        </Button>
 
-      <Button
-        type="button"
-        variant="secondary"
-        data-testid="games-back-home"
-        className="mt-6 min-h-14 gap-2 rounded-2xl border border-white/15 bg-white/10 px-8 text-lg text-white hover:bg-white/15"
-        onClick={() => dispatch({ type: 'SET_STAGE', stage: 'mirror_home' })}
-      >
-        <ArrowLeft className="size-5" aria-hidden />
-        Back to home
-      </Button>
-    </div>
+        <Button
+          type="button"
+          variant="outline"
+          data-testid="play-bowling"
+          {...{ [MIRROR_GESTURE_TARGET_ATTR]: 'true' }}
+          className={cn(mirrorGestureMenuButtonClass)}
+          onClick={() => dispatch({ type: 'SET_STAGE', stage: 'bowling_game' })}
+        >
+          Bowling
+        </Button>
+
+        <Button
+          type="button"
+          variant="outline"
+          data-testid="play-rehab-games"
+          {...{ [MIRROR_GESTURE_TARGET_ATTR]: 'true' }}
+          className={cn(mirrorGestureMenuButtonClass)}
+          onClick={openRehab}
+        >
+          Rehab games
+        </Button>
+
+        <Button
+          type="button"
+          variant="outline"
+          data-testid="games-back-home"
+          {...{ [MIRROR_GESTURE_TARGET_ATTR]: 'true' }}
+          className={cn(mirrorGestureMenuButtonClass)}
+          onClick={() => dispatch({ type: 'SET_STAGE', stage: 'mirror_home' })}
+        >
+          Back
+        </Button>
+      </nav>
+    </MirrorPortraitCard>
   );
 }

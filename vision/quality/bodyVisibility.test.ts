@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { evaluateBodyVisibility } from './bodyVisibility';
+import { hinge } from '../test/deadliftHinge';
 import { blankLandmarks, setLandmark, visibleStandingLandmarks } from '../test/fixtures';
 
 describe('BodyVisibility', () => {
@@ -35,5 +36,20 @@ describe('BodyVisibility', () => {
     expect(result.visible).toBe(false);
     expect(result.missingLandmarks).toContain('leftShoulder');
     expect(result.missingLandmarks).toContain('rightHip');
+  });
+
+  it('accepts a side-view deadlift when the far side is not seen', () => {
+    const pose = hinge({ leanDeg: 55 });
+    const result = evaluateBodyVisibility(pose.landmarks, pose.frameAspect);
+    expect(result.visible).toBe(true);
+    expect(result.missingLandmarks).toEqual([]);
+  });
+
+  it('still rejects a frontal view when one shoulder is weak and far from the other', () => {
+    const landmarks = visibleStandingLandmarks();
+    setLandmark(landmarks, 'rightShoulder', { x: 0.85, y: 0.3, visibility: 0.15 });
+    const result = evaluateBodyVisibility(landmarks, 16 / 9);
+    expect(result.visible).toBe(false);
+    expect(result.missingLandmarks).toContain('rightShoulder');
   });
 });

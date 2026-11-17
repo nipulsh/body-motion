@@ -38,6 +38,8 @@ import { Alert, AlertDescription } from '../ui/alert';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { analysisWasPossible, DeformityList } from '../analysis/DeformityList';
+import { MuscleContribution } from '../analysis/MuscleContribution';
 
 export function PatientDetailScreen() {
   const { userId } = useAppAuth();
@@ -176,7 +178,14 @@ export function PatientDetailScreen() {
         if (!cancelled) setSavedAnalysis(null);
       }
 
-      if (cancelled || (cached && cached.length > 0)) return;
+      if (cancelled) return;
+      // A scan that could not be analysed has nothing to plan exercises from.
+      if (analysis && !analysisWasPossible(analysis)) {
+        setExercises([]);
+        setLoadingExercises(false);
+        return;
+      }
+      if (cached && cached.length > 0) return;
 
       setLoadingExercises(true);
       try {
@@ -503,6 +512,8 @@ export function PatientDetailScreen() {
                   savedAnalysis?.observedDeformation ?? latestAnalysisJob.analysis.observedDeformation
                 }
                 muscles={savedAnalysis?.muscles}
+                deformities={savedAnalysis?.deformities}
+                analysisPossible={savedAnalysis ? analysisWasPossible(savedAnalysis) : true}
                 inProgress={latestAnalysisJob.status !== 'COMPLETED'}
               />
               <Button
@@ -554,6 +565,10 @@ export function PatientDetailScreen() {
           ) : !latestAnalysisJob ? (
             <p className="text-sm text-muted-foreground">
               Complete a scan and analysis first to generate exercises.
+            </p>
+          ) : savedAnalysis && !analysisWasPossible(savedAnalysis) ? (
+            <p className="text-sm text-muted-foreground">
+              The latest scan could not be analysed. Scan again to generate exercises.
             </p>
           ) : exercises.length === 0 ? (
             <div className="space-y-3">
@@ -610,14 +625,26 @@ function AnalysisBlock({
   bodyRegion,
   observedDeformation,
   muscles,
+  deformities,
+  analysisPossible,
   inProgress,
 }: {
   summary: string;
   bodyRegion: string;
   observedDeformation: string;
   muscles?: AnalysisResponse['muscles'];
+  deformities?: AnalysisResponse['deformities'];
+  analysisPossible: boolean;
   inProgress: boolean;
 }) {
+  if (!analysisPossible) {
+    return (
+      <div className="space-y-1">
+        <p className="text-sm font-medium">This scan could not be analysed</p>
+        <p className="text-sm">{summary}</p>
+      </div>
+    );
+  }
   return (
     <div className="space-y-3">
       <p className="text-sm">{summary}</p>
@@ -629,12 +656,14 @@ function AnalysisBlock({
           The 3D model is still being built. This analysis is ready to review.
         </p>
       ) : null}
+      <DeformityList deformities={deformities} />
       {muscles && muscles.length > 0 ? (
         <ul className="space-y-2">
           {muscles.map((muscle, index) => (
             <li key={`${muscle.name}-${index}`} className="rounded-lg border px-3 py-2">
               <p className="text-sm font-medium">{muscle.name}</p>
               <p className="text-sm text-primary">{hedgedLikelihood(muscle.likelihood)}</p>
+              <MuscleContribution percent={muscle.contributionPercent} />
               <p className="text-sm text-muted-foreground">{muscle.reason}</p>
             </li>
           ))}

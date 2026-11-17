@@ -1,8 +1,8 @@
 import type { ScanType } from '@prisma/client';
 import type { PatientImageInput } from './analysis.service';
 
-/** Max frames sent to Gemini for timed bursts (full 80 is costly and may exceed practical limits). */
-export const TIMED_BURST_GEMINI_ANALYSIS_FRAMES = 24;
+/** Max frames sent to Gemini for timed bursts. The guided capture is 30 (10 front, 10 right, 10 back), all sent. */
+export const TIMED_BURST_GEMINI_ANALYSIS_FRAMES = 30;
 
 type AnalysisFrame = {
   buffer: Buffer;
@@ -39,10 +39,20 @@ function timedBurstFrameLabel(
   sourceIndex: number,
   totalFrames: number,
 ): string {
-  const frameLabel = image.angle ?? String(sourceIndex);
-  const approxMs = Number(frameLabel) * 100;
-  const timeSuffix = Number.isFinite(approxMs) ? `, ~${approxMs}ms` : '';
-  return `Patient video frame ${subsetIndex + 1}/${subsetLength} (capture ${sourceIndex + 1}/${totalFrames}${timeSuffix})`;
+  const angle = Number(image.angle);
+  // Guided capture stores 0 for facing the camera, 90 for turned right, 180 for the back to the camera.
+  // 270 (turned left) comes from scans taken before the back view replaced it.
+  const view =
+    angle === 0
+      ? ', facing the camera'
+      : angle === 90
+        ? ', turned right'
+        : angle === 180
+          ? ', back to the camera'
+          : angle === 270
+            ? ', turned left'
+            : '';
+  return `Patient frame ${subsetIndex + 1}/${subsetLength} (capture ${sourceIndex + 1}/${totalFrames}${view})`;
 }
 
 function buildTimedBurstInputs(

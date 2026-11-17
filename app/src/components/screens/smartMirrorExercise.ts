@@ -42,6 +42,20 @@ export function mirrorSnapshotsEqual(
   );
 }
 
+/**
+ * Downward shift for the exercise panel so it follows the viewer's eyes,
+ * stopping when the panel's bottom reaches the bottom of the screen.
+ */
+export function mirrorPanelFollowOffset(
+  eyeDropPx: number,
+  panelTop: number,
+  panelHeight: number,
+  screenHeight: number,
+): number {
+  const room = Math.max(0, screenHeight - panelTop - panelHeight);
+  return Math.min(Math.max(0, eyeDropPx), room);
+}
+
 export function formatMirrorRepCount(repCount: number, targetReps: number): string {
   return `${String(repCount).padStart(2, '0')} / ${String(targetReps).padStart(2, '0')}`;
 }

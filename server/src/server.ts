@@ -1,16 +1,22 @@
 import { createApp } from './app';
 import { env } from './config/env';
 import { connectPrisma, disconnectPrisma } from './repositories/prisma';
+import { assertDatabaseSchema } from './repositories/schemaCheck';
 import { ensureStorageBuckets } from './services/storage/storage.service';
 import { logger } from './utils/logger';
 
 async function main(): Promise<void> {
   await connectPrisma();
+  await assertDatabaseSchema();
   await ensureStorageBuckets();
 
   const app = createApp();
   const server = app.listen(env.PORT, '0.0.0.0', () => {
-    logger.info('Body Motion server listening', { port: env.PORT, nodeEnv: env.NODE_ENV });
+    logger.info('Body Motion server listening', {
+      port: env.PORT,
+      nodeEnv: env.NODE_ENV,
+      storageDriver: env.STORAGE_DRIVER,
+    });
   });
 
   async function shutdown(signal: string): Promise<void> {

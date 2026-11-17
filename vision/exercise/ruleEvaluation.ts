@@ -11,6 +11,11 @@ export interface EvaluatedRule {
   targetAngle: number;
   inStartZone: boolean;
   inTargetZone: boolean;
+  /**
+   * Went through the target window and out the far side (e.g. a squat deeper than 80°).
+   * The joint was inside the window on the way, so the rep still reached its target.
+   */
+  pastTargetZone: boolean;
   /** 0–1 progress from start toward target along the concentric path. */
   concentricProgress: number;
   /** 0–1 progress from target back toward start. */
@@ -23,6 +28,8 @@ export function concentricDirection(rule: TrackingRule): 'increasing' | 'decreas
 }
 
 export function targetRange(rule: TrackingRule): { min: number; max: number } {
+  // Explicit windows come from repAngleRanges.ts and win over the tolerance band.
+  if (rule.targetRange) return { ...rule.targetRange };
   // Hit-test the required angle ± tolerance. Clamping that band to minimum/maximum
   // made a reached target miss when those bounds were a tight box around only one pose.
   const tolerance = Math.max(0, rule.tolerance);
@@ -33,6 +40,7 @@ export function targetRange(rule: TrackingRule): { min: number; max: number } {
 }
 
 export function startRange(rule: TrackingRule, startTolerance: number): { min: number; max: number } {
+  if (rule.startRange) return { ...rule.startRange };
   // Rest poses sit past the nominal start: a straight elbow measures ~180° even when
   // startAngle is 165°, and an arm at the side can be near 0° when startAngle is 20°.
   // The old ±tolerance window, clipped by minimum/maximum, excluded those readings,
@@ -70,6 +78,7 @@ export function evaluateRule(
     targetAngle: rule.requiredAngle,
     inStartZone: false,
     inTargetZone: false,
+    pastTargetZone: false,
     concentricProgress: 0,
     returnProgress: 0,
     satisfied: false,
@@ -96,6 +105,7 @@ export function evaluateRule(
   const inStartZone = isAngleInRange(angle, start);
   const inTargetZone = isAngleInRange(angle, target);
   const direction = concentricDirection(rule);
+  const pastTargetZone = direction === 'decreasing' ? angle < target.min : angle > target.max;
   const span = Math.abs(rule.startAngle - rule.requiredAngle);
 
   let concentricProgress = 0;
@@ -129,6 +139,7 @@ export function evaluateRule(
     confidence: reading.confidence,
     inStartZone,
     inTargetZone,
+    pastTargetZone,
     concentricProgress,
     returnProgress,
     satisfied: inTargetZone,
@@ -145,6 +156,11 @@ export function allInStartZone(rules: EvaluatedRule[]): boolean {
 
 export function allInTargetZone(rules: EvaluatedRule[]): boolean {
   return allAvailable(rules) && rules.every((rule) => rule.inTargetZone);
+}
+
+/** Every joint is in its target window, or went through it and beyond. */
+export function allReachedTarget(rules: EvaluatedRule[]): boolean {
+  return allAvailable(rules) && rules.every((rule) => rule.inTargetZone || rule.pastTargetZone);
 }
 
 export function anyMovingTowardTarget(rules: EvaluatedRule[]): boolean {
@@ -181,21 +197,31 @@ export function movementHint(rule: TrackingRule, evaluated: EvaluatedRule): stri
   }
 
   const target = targetRange(rule);
+  const name = jointDisplayName(rule.joint);
+  if (concentricDirection(rule) === 'decreasing') {
+    // The joint closes toward the target (squat knee, curl elbow, hinge spine).
+    if (evaluated.currentAngle > target.max) {
+      return rule.joint === 'spine' ? 'Hinge further at your hips' : `Bend your ${name} further`;
+    }
+    if (evaluated.currentAngle < target.min) return `Past the target, ease your ${name} back a little`;
+    return `Keep your ${name} steady`;
+  }
+
   if (evaluated.currentAngle < target.min) {
     switch (rule.movement) {
       case 'abduction':
-        return `Raise your ${jointDisplayName(rule.joint)} out to the side`;
+        return `Raise your ${name} out to the side`;
       case 'flexion':
       case 'adduction':
       case 'elevation':
-        return `Move your ${jointDisplayName(rule.joint)} further into ${rule.movement}`;
+        return `Move your ${name} further into ${rule.movement}`;
       default:
-        return `Increase ${jointDisplayName(rule.joint)} angle toward target`;
+        return `Increase ${name} angle toward target`;
     }
   }
 
   if (evaluated.currentAngle > target.max) {
-    return `Reduce ${jointDisplayName(rule.joint)} angle toward target`;
+    return `Past the target, lower your ${name} slightly`;
   }
 
   return `Keep your ${jointDisplayName(rule.joint)} steady`;

@@ -26,7 +26,7 @@ export function resolveCameraPositioningFeedback(pose: PoseResult | null): strin
     return 'Step back until your entire body is visible.';
   }
 
-  const visibility = evaluateBodyVisibility(pose.landmarks);
+  const visibility = evaluateBodyVisibility(pose.landmarks, pose.frameAspect);
   if (visibility.visible) return null;
 
   const missing = visibility.missingLandmarks.map((name) => name.toLowerCase());

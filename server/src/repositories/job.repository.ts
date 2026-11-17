@@ -17,7 +17,7 @@ export type JobWithRelations = AnalysisJob & {
   analysisResult: (AnalysisResult & { muscleFindings: MuscleFinding[] }) | null;
   generatedImages: GeneratedImage[];
   meshyJobs: MeshyJob[];
-  scan: { type: ScanType } | null;
+  scan: { type: ScanType; postureMetrics: Prisma.JsonValue | null } | null;
 };
 
 export async function createJob(input: {
@@ -79,7 +79,7 @@ export async function findJobWithRelations(jobId: string): Promise<JobWithRelati
       analysisResult: { include: { muscleFindings: true } },
       generatedImages: true,
       meshyJobs: true,
-      scan: { select: { type: true } },
+      scan: { select: { type: true, postureMetrics: true } },
     },
   });
 }

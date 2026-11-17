@@ -25,6 +25,12 @@ import type {
   ModelResponse,
 } from '../types/api';
 import { AppError } from '../utils/AppError';
+import {
+  analysisPossibleOf,
+  deformitiesOf,
+  measurementConflictOf,
+  serializeMuscleFindings,
+} from '../utils/muscleContribution';
 import { prismaSideToApi } from '../utils/bodySide';
 import { asyncHandler } from '../utils/asyncHandler';
 import { requireHospitalForUser } from '../utils/requireHospital';
@@ -71,17 +77,11 @@ export const getJobAnalysisHandler = asyncHandler(async (req: Request, res: Resp
     observedDeformation: result.observedDeformation,
     affectedSide: prismaSideToApi(result.affectedSide),
     summary: result.summary,
-    muscles: result.muscleFindings.map((muscle) => ({
-      name: muscle.name,
-      side: prismaSideToApi(muscle.side),
-      likelihood: muscle.likelihood,
-      deformation: muscle.deformation,
-      intensity: muscle.intensity,
-      reason: muscle.reason,
-      bodyExplorerId: muscle.bodyExplorerId || undefined,
-      bodyExplorerMeshNames:
-        muscle.bodyExplorerMeshNames.length > 0 ? muscle.bodyExplorerMeshNames : undefined,
-    })),
+    analysisPossible: analysisPossibleOf(result.parsed),
+    deformities: deformitiesOf(result.parsed),
+    muscles: serializeMuscleFindings(result.muscleFindings, prismaSideToApi),
+    // Clinician-only: shown on clinician screens, never on the patient-facing mirror.
+    measurementConflict: measurementConflictOf(result.parsed),
   });
 });
 
@@ -156,6 +156,9 @@ export const generateJobExercisesHandler = asyncHandler(async (req: Request, res
     const result = await findAnalysisResult(jobId);
     if (!result) throw AppError.notFound('Analysis is not available for this job yet.');
     analysis = buildAnalysisInputFromResult(result);
+  }
+  if (analysis.analysisPossible === false) {
+    throw AppError.conflict('This scan could not be analysed, so there is nothing to plan exercises from.');
   }
 
   const patient = await findPatientForHospital(job.patientId, hospital.id);

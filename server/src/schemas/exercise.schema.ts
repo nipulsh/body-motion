@@ -109,6 +109,7 @@ export const exerciseGenerationRequestSchema = z.object({
             deformation: z.string().min(1),
             intensity: z.number().min(0).max(1),
             reason: z.string().min(1),
+            contributionPercent: z.number().min(0).max(100).optional(),
           }),
         )
         .min(1),

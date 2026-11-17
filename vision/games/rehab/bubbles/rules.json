@@ -1,0 +1,8 @@
+{
+  "R1": { "text": "Blue = Left, Red = Right", "blue": "left", "red": "right" },
+  "R2": { "text": "Swap: Blue = Right, Red = Left", "blue": "right", "red": "left" },
+  "R3": { "text": "Only blue now, ignore red", "blue": "left", "red": "avoid" },
+  "R4": { "text": "Only red now, ignore blue", "blue": "avoid", "red": "right" },
+  "R5": { "text": "Left hand only, any colour", "blue": "left", "red": "left" },
+  "R6": { "text": "Right hand only, any colour", "blue": "right", "red": "right" }
+}

@@ -29,6 +29,11 @@ export interface PoseDetectorLike {
   processFrame(video: HTMLVideoElement, timestamp: number): PoseResult | null;
   dispose(): void;
   isReady(): boolean;
+  /** Attach the body outline to each `PoseResult` while a check needs it. */
+  setSegmentationEnabled?(enabled: boolean): Promise<void>;
+  /** Run a heavier landmark model while a check needs it. */
+  setModelVariant?(variant: 'full' | 'heavy'): Promise<void>;
+  getModelVariant?(): 'full' | 'heavy';
 }
 
 export interface ScanControllerDeps {
@@ -282,6 +287,7 @@ export class ScanController {
             angleDeg: sector,
             timestamp: frame.timestamp,
             quality: quality.poseConfidence,
+            pose,
           });
           this.emitEvent('IMAGE_CAPTURED');
           if (!this.announcedFirstCapture) {

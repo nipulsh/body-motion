@@ -6,12 +6,20 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SmartMirrorHomeScreen } from './SmartMirrorHomeScreen';
 
-const dispatch = vi.fn();
+const workflow = vi.hoisted(() => ({
+  dispatch: vi.fn(),
+  state: {
+    activePatient: null,
+    jobId: null as string | null,
+    jobStatus: null as { status: string } | null,
+    analysis: null as { summary: string } | null,
+  },
+}));
 
 vi.mock('../../workflow/WorkflowContext', () => ({
   useWorkflow: () => ({
-    dispatch,
-    state: { activePatient: null },
+    dispatch: workflow.dispatch,
+    state: workflow.state,
   }),
 }));
 
@@ -24,7 +32,10 @@ describe('SmartMirrorHomeScreen', () => {
   let root: Root;
 
   beforeEach(() => {
-    dispatch.mockClear();
+    workflow.dispatch.mockClear();
+    workflow.state.jobId = null;
+    workflow.state.jobStatus = null;
+    workflow.state.analysis = null;
     container = document.createElement('div');
     document.body.appendChild(container);
     root = createRoot(container);
@@ -64,18 +75,45 @@ describe('SmartMirrorHomeScreen', () => {
     renderHome();
     const analyse = container.querySelector<HTMLButtonElement>('[data-testid="mirror-home-analyse"]');
     act(() => analyse?.click());
-    expect(dispatch).toHaveBeenCalledWith({ type: 'SET_SCAN_CAPTURE_MODE', mode: 'TIMED_BURST' });
-    expect(dispatch).toHaveBeenCalledWith({ type: 'SET_JOB_COMPLETE_STAGE', stage: 'mirror_results' });
-    expect(dispatch).toHaveBeenCalledWith({ type: 'RESET_CAPTURES' });
-    expect(dispatch).toHaveBeenCalledWith({ type: 'SET_SCAN', scanId: null });
-    expect(dispatch).toHaveBeenCalledWith({ type: 'CLEAR_JOB' });
-    expect(dispatch).toHaveBeenCalledWith({ type: 'SET_STAGE', stage: 'mirror_analysis' });
+    expect(workflow.dispatch).toHaveBeenCalledWith({ type: 'SET_SCAN_CAPTURE_MODE', mode: 'TIMED_BURST' });
+    expect(workflow.dispatch).toHaveBeenCalledWith({ type: 'SET_JOB_COMPLETE_STAGE', stage: 'mirror_results' });
+    expect(workflow.dispatch).toHaveBeenCalledWith({ type: 'RESET_CAPTURES' });
+    expect(workflow.dispatch).toHaveBeenCalledWith({ type: 'SET_SCAN', scanId: null });
+    expect(workflow.dispatch).toHaveBeenCalledWith({ type: 'CLEAR_JOB' });
+    expect(workflow.dispatch).toHaveBeenCalledWith({ type: 'SET_STAGE', stage: 'mirror_analysis' });
+  });
+
+  it('blocks a new analysis while one is running and opens that job from Review analysis', () => {
+    workflow.state.jobId = 'job-1';
+    workflow.state.jobStatus = { status: 'PROCESSING' };
+    renderHome();
+    const analyse = container.querySelector<HTMLButtonElement>('[data-testid="mirror-home-analyse"]');
+    expect(analyse?.disabled).toBe(true);
+    act(() => analyse?.click());
+    expect(workflow.dispatch).not.toHaveBeenCalled();
+
+    const review = container.querySelector<HTMLButtonElement>('[data-testid="mirror-home-review"]');
+    expect(review?.textContent).toBe('Review analysis');
+    act(() => review?.click());
+    expect(workflow.dispatch).toHaveBeenCalledWith({ type: 'SET_STAGE', stage: 'mirror_processing' });
+  });
+
+  it('opens the latest finished analysis from Review analysis', () => {
+    workflow.state.jobId = 'job-1';
+    workflow.state.jobStatus = { status: 'COMPLETED' };
+    workflow.state.analysis = { summary: 'Done' };
+    renderHome();
+    const analyse = container.querySelector<HTMLButtonElement>('[data-testid="mirror-home-analyse"]');
+    expect(analyse?.disabled).toBe(false);
+    const review = container.querySelector<HTMLButtonElement>('[data-testid="mirror-home-review"]');
+    act(() => review?.click());
+    expect(workflow.dispatch).toHaveBeenCalledWith({ type: 'SET_STAGE', stage: 'mirror_results' });
   });
 
   it('opens balance bird game directly', () => {
     renderHome();
     const game = container.querySelector<HTMLButtonElement>('[data-testid="mirror-home-game"]');
     act(() => game?.click());
-    expect(dispatch).toHaveBeenCalledWith({ type: 'SET_STAGE', stage: 'balance_bird_game' });
+    expect(workflow.dispatch).toHaveBeenCalledWith({ type: 'SET_STAGE', stage: 'balance_bird_game' });
   });
 });

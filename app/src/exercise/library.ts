@@ -1,4 +1,4 @@
-import type { Exercise, TrackingRule } from '@vision';
+import { applyRepAngleRanges, type Exercise, type TrackingRule } from '@vision';
 import { enrichExerciseWithDemoVideo } from '../api/exercises';
 
 function rule(overrides: Partial<TrackingRule> & Pick<TrackingRule, 'joint'>): TrackingRule {
@@ -16,22 +16,27 @@ function rule(overrides: Partial<TrackingRule> & Pick<TrackingRule, 'joint'>): T
   };
 }
 
+/** Rep windows come from `vision/exercise/repAngleRanges.ts`; the angles below are only defaults. */
 function libraryExercise(exercise: Exercise): Exercise {
-  return enrichExerciseWithDemoVideo(exercise);
+  return enrichExerciseWithDemoVideo(applyRepAngleRanges(exercise));
 }
 
 /** Curated exercises for sidebar practice (wireframe + rep counting). */
 export const EXERCISE_LIBRARY: Exercise[] = [
   libraryExercise({
-    id: 'library_shoulder_abduction_right',
-    name: 'Shoulder abduction (right)',
-    description: 'Raise your right arm out to the side to shoulder height.',
+    id: 'library_shoulder_abduction',
+    name: 'Shoulder abduction',
+    description: 'Raise both arms out to the sides to shoulder height, then lower with control.',
+    formCheck: 'shoulder',
     targetBodyParts: ['shoulder'],
     difficulty: 'beginner',
     sets: 1,
     recommendedReps: 10,
     restSeconds: 30,
-    instructions: ['Stand facing the camera with your right arm at your side.', 'Raise to shoulder height, then lower with control.'],
+    instructions: [
+      'Stand facing the camera with both arms at your sides.',
+      'Raise both arms out to shoulder height together, then lower with control.',
+    ],
     safetyNotes: ['Stop if you feel sharp pain.'],
     trackingRules: [
       rule({
@@ -41,23 +46,9 @@ export const EXERCISE_LIBRARY: Exercise[] = [
         requiredAngle: 90,
         minimumAngle: 10,
         maximumAngle: 120,
-        startingPosition: 'Right arm at side',
-        targetPosition: 'Right arm at shoulder height',
+        startingPosition: 'Arms at sides',
+        targetPosition: 'Arms at shoulder height',
       }),
-    ],
-  }),
-  libraryExercise({
-    id: 'library_shoulder_abduction_left',
-    name: 'Shoulder abduction (left)',
-    description: 'Raise your left arm out to the side to shoulder height.',
-    targetBodyParts: ['shoulder'],
-    difficulty: 'beginner',
-    sets: 1,
-    recommendedReps: 10,
-    restSeconds: 30,
-    instructions: ['Stand facing the camera with your left arm at your side.', 'Raise to shoulder height, then lower with control.'],
-    safetyNotes: ['Stop if you feel sharp pain.'],
-    trackingRules: [
       rule({
         joint: 'left_shoulder',
         movement: 'abduction',
@@ -65,21 +56,24 @@ export const EXERCISE_LIBRARY: Exercise[] = [
         requiredAngle: 90,
         minimumAngle: 10,
         maximumAngle: 120,
-        startingPosition: 'Left arm at side',
-        targetPosition: 'Left arm at shoulder height',
+        startingPosition: 'Arms at sides',
+        targetPosition: 'Arms at shoulder height',
       }),
     ],
   }),
   libraryExercise({
-    id: 'library_elbow_flexion_right',
-    name: 'Elbow flexion (right)',
-    description: 'Bend your right elbow, bringing your hand toward your shoulder.',
+    id: 'library_elbow_flexion',
+    name: 'Elbow flexion',
+    description: 'Bend both elbows, bringing your hands toward your shoulders, then extend back.',
     targetBodyParts: ['elbow'],
     difficulty: 'beginner',
     sets: 1,
     recommendedReps: 12,
     restSeconds: 25,
-    instructions: ['Keep your upper arm steady.', 'Bend the elbow fully, then extend back to start.'],
+    instructions: [
+      'Stand facing the camera with both arms at your sides.',
+      'Keep your upper arms steady, bend both elbows, then extend back to start.',
+    ],
     safetyNotes: ['Move slowly and stay in a pain-free range.'],
     trackingRules: [
       rule({
@@ -89,23 +83,9 @@ export const EXERCISE_LIBRARY: Exercise[] = [
         requiredAngle: 75,
         minimumAngle: 45,
         maximumAngle: 180,
-        startingPosition: 'Arm extended',
-        targetPosition: 'Elbow bent',
+        startingPosition: 'Arms extended',
+        targetPosition: 'Elbows bent',
       }),
-    ],
-  }),
-  libraryExercise({
-    id: 'library_elbow_flexion_left',
-    name: 'Elbow flexion (left)',
-    description: 'Bend your left elbow, bringing your hand toward your shoulder.',
-    targetBodyParts: ['elbow'],
-    difficulty: 'beginner',
-    sets: 1,
-    recommendedReps: 12,
-    restSeconds: 25,
-    instructions: ['Keep your upper arm steady.', 'Bend the elbow fully, then extend back to start.'],
-    safetyNotes: ['Move slowly and stay in a pain-free range.'],
-    trackingRules: [
       rule({
         joint: 'left_elbow',
         movement: 'flexion',
@@ -113,8 +93,8 @@ export const EXERCISE_LIBRARY: Exercise[] = [
         requiredAngle: 75,
         minimumAngle: 45,
         maximumAngle: 180,
-        startingPosition: 'Arm extended',
-        targetPosition: 'Elbow bent',
+        startingPosition: 'Arms extended',
+        targetPosition: 'Elbows bent',
       }),
     ],
   }),
@@ -122,6 +102,7 @@ export const EXERCISE_LIBRARY: Exercise[] = [
     id: 'library_squat',
     name: 'Squat',
     description: 'Lower into a squat with both knees bending, then return to standing.',
+    formCheck: 'squat',
     targetBodyParts: ['knee', 'hip'],
     difficulty: 'beginner',
     sets: 2,
@@ -129,7 +110,8 @@ export const EXERCISE_LIBRARY: Exercise[] = [
     restSeconds: 45,
     instructions: [
       'Face the camera with feet shoulder-width apart.',
-      'Sit back and down until both knees reach about 90°, then stand tall again.',
+      'Sit back and down until both knees reach about 90°, keeping each knee on the line above your heel.',
+      'Keep your back straight and your shoulders and hips level, then stand tall again.',
     ],
     safetyNotes: ['Keep your chest up and knees tracking over your toes.'],
     trackingRules: [
@@ -161,6 +143,7 @@ export const EXERCISE_LIBRARY: Exercise[] = [
     id: 'library_lunge_right',
     name: 'Forward lunge (right)',
     description: 'Step forward with the right leg and bend both knees, then return.',
+    formCheck: 'lunge',
     targetBodyParts: ['knee', 'hip'],
     difficulty: 'beginner',
     sets: 2,
@@ -169,6 +152,7 @@ export const EXERCISE_LIBRARY: Exercise[] = [
     instructions: [
       'Stand tall facing the camera.',
       'Step forward with your right foot, lower until the right knee is near 90°, then push back to start.',
+      'Keep your right knee on the line above your toes, with shoulders and hips level.',
     ],
     safetyNotes: ['Use a wall or chair for balance if needed.'],
     trackingRules: [
@@ -197,43 +181,32 @@ export const EXERCISE_LIBRARY: Exercise[] = [
     ],
   }),
   libraryExercise({
-    id: 'library_finger_tracing',
-    name: 'Finger tracing',
-    description: 'Trace shapes in the air with your index fingertip while your body stays in frame.',
-    modality: 'hand_trace',
-    targetBodyParts: ['hand'],
+    id: 'library_deadlift',
+    name: 'Deadlift',
+    description: 'Hinge at the hips with a flat back, then stand tall again.',
+    formCheck: 'deadlift',
+    targetBodyParts: ['hip', 'back'],
     difficulty: 'beginner',
-    sets: 1,
-    recommendedReps: 1,
-    restSeconds: 15,
+    sets: 2,
+    recommendedReps: 8,
+    restSeconds: 45,
     instructions: [
-      'Raise your index finger in front of the camera.',
-      'Draw circles, letters, or any pattern — the yellow trail follows your fingertip.',
+      'Stand side-on to the camera, feet hip-width apart.',
+      'Push your hips back and lower your chest, keeping your back on one straight line from hips to head.',
+      'Drive your hips forward to stand tall again.',
     ],
-    safetyNotes: ['Move slowly and stay within a comfortable reach.'],
-    trackingRules: [],
-  }),
-  libraryExercise({
-    id: 'library_knee_flexion_right',
-    name: 'Knee flexion (right)',
-    description: 'Lift your right knee toward your chest while balancing on the left leg.',
-    targetBodyParts: ['knee'],
-    difficulty: 'beginner',
-    sets: 1,
-    recommendedReps: 10,
-    restSeconds: 30,
-    instructions: ['Stand tall on your left leg.', 'Lift the right knee, pause briefly, then lower.'],
-    safetyNotes: ['Hold a stable surface if needed for balance.'],
+    safetyNotes: ['Keep your back flat; do not round it.', 'Stop if you feel back pain.'],
     trackingRules: [
       rule({
-        joint: 'right_knee',
+        joint: 'spine',
         movement: 'flexion',
         startAngle: 170,
-        requiredAngle: 90,
+        requiredAngle: 100,
         minimumAngle: 60,
         maximumAngle: 180,
-        startingPosition: 'Standing, leg straight',
-        targetPosition: 'Knee lifted near 90°',
+        tolerance: 15,
+        startingPosition: 'Standing tall',
+        targetPosition: 'Hips hinged, chest lowered',
       }),
     ],
   }),

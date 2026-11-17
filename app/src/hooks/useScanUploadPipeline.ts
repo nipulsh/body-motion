@@ -36,8 +36,8 @@ export function useScanUploadPipeline({ retryStage, processingStage }: ScanUploa
     }
 
     const expected = targetCaptureCount(state.scanCaptureMode);
-    const minImages = state.scanCaptureMode === 'TIMED_BURST' ? 80 : 30;
-    const maxImages = state.scanCaptureMode === 'TIMED_BURST' ? 80 : 40;
+    const minImages = state.scanCaptureMode === 'TIMED_BURST' ? expected : 30;
+    const maxImages = state.scanCaptureMode === 'TIMED_BURST' ? expected : 40;
     if (state.capturedImages.length < minImages) {
       dispatch({
         type: 'SET_ERROR',
@@ -101,7 +101,7 @@ export function useScanUploadPipeline({ retryStage, processingStage }: ScanUploa
         dispatch({ type: 'SET_UPLOAD_PROGRESS', percent: 0 });
         await uploadScanImages(
           scanId,
-          state.capturedImages.map((c) => ({ blob: c.blob, angleDeg: c.angleDeg })),
+          state.capturedImages.map((c) => ({ blob: c.blob, angleDeg: c.angleDeg, pose: c.pose })),
           (loaded, total) => {
             const pct = total > 0 ? Math.round((loaded / total) * 100) : 0;
             dispatch({ type: 'SET_UPLOAD_PROGRESS', percent: pct });

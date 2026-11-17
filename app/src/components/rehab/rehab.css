@@ -1,0 +1,592 @@
+/*
+ * Mirror Rehab chrome uses the same colour order as the rest of the site
+ * (app.css) and the game palette (vision/games/rehab/core/config.json):
+ *   white controls, cyan primary for the chosen action,
+ *   then chart-1..5: cyan, green, gold, purple, red.
+ * Feedback keeps that order: good = chart-2, caution = chart-3,
+ * left = chart-1, right = chart-5.
+ * Sizes scale with --u (32px at 1080 short-side).
+ *
+ * Every instruction and button sits in the top 40% of the portrait screen (--rh-top-zone, the
+ * same line as `mirrorTopZone.ts`): eye level, in reach of a raised hand, and off the body
+ * below. Game pieces and the hit judgements stay where the play is.
+ */
+.rehab-root {
+  --u: 32px;
+  --rh-left: var(--chart-1);
+  --rh-right: var(--chart-5);
+  --rh-good: var(--chart-2);
+  --rh-caution: var(--chart-3);
+  --rh-line: #000;
+  --rh-top-zone: 40%;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: var(--u);
+  line-height: 1.2;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.rehab-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  z-index: 0;
+}
+
+.rehab-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.rehab-layer > * {
+  pointer-events: auto;
+}
+
+.rehab-btn {
+  appearance: none;
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+  border: 2px solid #000;
+  border-radius: calc(var(--u) * 0.5);
+  padding: calc(var(--u) * 0.32) calc(var(--u) * 0.7);
+  font: inherit;
+  font-size: var(--u);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 150ms ease-out, border-color 150ms ease-out, box-shadow 150ms ease-out, color 150ms ease-out, transform 150ms ease-out;
+}
+
+.rehab-btn:hover,
+.rehab-btn:focus-visible,
+.rehab-btn[data-hover='true'] {
+  outline: none;
+  background: var(--outline-hover);
+  border-color: var(--primary);
+  color: #000;
+  box-shadow: 0 8px 24px color-mix(in oklab, var(--primary) 35%, transparent);
+  transform: translateY(-2px);
+}
+
+.rehab-btn[aria-pressed='true'],
+.rehab-btn.is-selected,
+.rehab-btn.is-primary {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-color: var(--primary);
+  box-shadow: 0 0 calc(var(--u) * 0.45) color-mix(in oklab, var(--primary) 45%, transparent);
+}
+
+.rehab-btn[aria-pressed='true']:hover,
+.rehab-btn.is-selected:hover,
+.rehab-btn.is-primary:hover,
+.rehab-btn[aria-pressed='true']:focus-visible,
+.rehab-btn.is-selected:focus-visible,
+.rehab-btn.is-primary:focus-visible,
+.rehab-btn[aria-pressed='true'][data-hover='true'],
+.rehab-btn.is-selected[data-hover='true'],
+.rehab-btn.is-primary[data-hover='true'] {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+  color: var(--primary-foreground);
+}
+
+.rehab-btn:disabled,
+.rehab-btn:disabled:hover,
+.rehab-btn:disabled[data-hover='true'] {
+  opacity: 0.38;
+  cursor: default;
+  box-shadow: none;
+  transform: none;
+  pointer-events: none;
+}
+
+.rehab-btn.is-danger {
+  background: var(--destructive);
+  border-color: var(--destructive);
+  color: #fff;
+}
+
+.rehab-btn.is-danger:hover,
+.rehab-btn.is-danger:focus-visible,
+.rehab-btn.is-danger[data-hover='true'] {
+  background: var(--destructive-hover);
+  border-color: var(--destructive-hover);
+  color: #fff;
+  box-shadow: 0 8px 24px color-mix(in oklab, var(--destructive) 40%, transparent);
+}
+
+.rehab-btn.is-small {
+  font-size: calc(var(--u) * 0.72);
+  padding: calc(var(--u) * 0.22) calc(var(--u) * 0.5);
+}
+
+.rehab-icon-btn {
+  width: calc(var(--u) * 2.2);
+  height: calc(var(--u) * 2.2);
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+}
+
+.rehab-icon-btn svg {
+  width: 55%;
+  height: 55%;
+}
+
+.rehab-muted {
+  color: var(--muted-foreground);
+}
+
+.rehab-small {
+  font-size: calc(var(--u) * 0.75);
+}
+
+/* Home: the top zone, starting under the Exit and gear corners. */
+.rehab-home {
+  position: absolute;
+  inset: 0 0 auto 0;
+  max-height: var(--rh-top-zone);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--u) * 0.8);
+  padding: calc(var(--u) * 3.4) calc(var(--u) * 0.8) calc(var(--u) * 0.6);
+  overflow-y: auto;
+}
+
+.rehab-games {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: calc(var(--u) * 0.6);
+}
+
+.rehab-game {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--u) * 0.25);
+  min-width: calc(var(--u) * 5.2);
+  font-size: calc(var(--u) * 0.72);
+}
+
+.rehab-game svg {
+  width: calc(var(--u) * 2);
+  height: calc(var(--u) * 2);
+}
+
+.rehab-levels {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: calc(var(--u) * 0.5);
+}
+
+.rehab-level {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--u) * 0.15);
+  width: calc(var(--u) * 4.3);
+}
+
+/* Five levels, in the site chart order: cyan, green, gold, purple, red. */
+.rehab-level:nth-child(1) { --level-color: var(--chart-1); }
+.rehab-level:nth-child(2) { --level-color: var(--chart-2); }
+.rehab-level:nth-child(3) { --level-color: var(--chart-3); }
+.rehab-level:nth-child(4) { --level-color: var(--chart-4); }
+.rehab-level:nth-child(5) { --level-color: var(--chart-5); }
+
+.rehab-level-ring {
+  width: calc(var(--u) * 3);
+  height: calc(var(--u) * 3);
+  border-radius: 50%;
+  border-width: 3px;
+  border-color: var(--level-color, var(--primary));
+  padding: 0;
+  font-size: calc(var(--u) * 1.3);
+}
+
+.rehab-level-ring.rehab-btn:hover,
+.rehab-level-ring.rehab-btn:focus-visible,
+.rehab-level-ring.rehab-btn[data-hover='true'] {
+  background: var(--outline-hover);
+  border-color: var(--level-color, var(--primary));
+  color: #000;
+  box-shadow: 0 8px 24px color-mix(in oklab, var(--level-color, var(--primary)) 40%, transparent);
+}
+
+.rehab-level-ring.rehab-btn[aria-pressed='true'],
+.rehab-level-ring.rehab-btn.is-selected {
+  background: var(--level-color, var(--primary));
+  border-color: var(--level-color, var(--primary));
+  color: var(--primary-foreground);
+  box-shadow: 0 0 calc(var(--u) * 0.45) color-mix(in oklab, var(--level-color, var(--primary)) 50%, transparent);
+}
+
+.rehab-level-ring.rehab-btn[aria-pressed='true']:hover,
+.rehab-level-ring.rehab-btn.is-selected:hover,
+.rehab-level-ring.rehab-btn[aria-pressed='true']:focus-visible,
+.rehab-level-ring.rehab-btn.is-selected:focus-visible,
+.rehab-level-ring.rehab-btn[aria-pressed='true'][data-hover='true'],
+.rehab-level-ring.rehab-btn.is-selected[data-hover='true'] {
+  background: color-mix(in oklab, var(--level-color, var(--primary)) 82%, white);
+  border-color: var(--level-color, var(--primary));
+  color: var(--primary-foreground);
+}
+
+.rehab-level-name {
+  font-size: calc(var(--u) * 0.68);
+  text-align: center;
+}
+
+.rehab-stars {
+  display: inline-flex;
+  gap: calc(var(--u) * 0.12);
+}
+
+.rehab-stars svg {
+  width: calc(var(--u) * 0.6);
+  height: calc(var(--u) * 0.6);
+}
+
+.rehab-options {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--u) * 0.4);
+}
+
+.rehab-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: calc(var(--u) * 0.3);
+}
+
+.rehab-corner {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  gap: calc(var(--u) * 0.4);
+  align-items: flex-start;
+}
+
+.rehab-corner.tl { top: calc(var(--u) * 0.5); left: calc(var(--u) * 0.5); }
+.rehab-corner.tr { top: calc(var(--u) * 0.5); right: calc(var(--u) * 0.5); flex-direction: row-reverse; }
+
+.rehab-exit-large {
+  font-size: calc(var(--u) * 1.15);
+  padding: calc(var(--u) * 0.45) calc(var(--u) * 1.1);
+}
+
+/* Play HUD */
+.rehab-hud-block {
+  position: absolute;
+  top: calc(var(--u) * 3.1);
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 0.15);
+  pointer-events: none;
+}
+
+.rehab-hud-block.left { left: calc(var(--u) * 0.6); align-items: flex-start; }
+.rehab-hud-block.right { right: calc(var(--u) * 0.6); align-items: flex-end; text-align: right; }
+
+.rehab-hud-level {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 0.3);
+  font-size: calc(var(--u) * 0.8);
+}
+
+.rehab-hud-score {
+  font-size: calc(var(--u) * 1.1);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.rehab-ring-timer {
+  width: calc(var(--u) * 1.1);
+  height: calc(var(--u) * 1.1);
+}
+
+.rehab-rule-card {
+  position: absolute;
+  top: calc(var(--u) * 0.5);
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 46%;
+  text-align: center;
+  font-size: calc(var(--u) * 0.78);
+  font-weight: 600;
+  padding: calc(var(--u) * 0.2) calc(var(--u) * 0.5);
+  background: rgb(0 0 0 / 72%);
+  border: 2px solid var(--primary);
+  border-radius: calc(var(--u) * 0.35);
+  pointer-events: none;
+}
+
+.rehab-rule-card.is-pulsing {
+  animation: rehab-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes rehab-pulse {
+  0%, 100% { border-color: var(--primary); box-shadow: none; }
+  50% { border-color: var(--rh-caution); box-shadow: 0 0 calc(var(--u) * 0.5) color-mix(in oklab, var(--rh-caution) 45%, transparent); }
+}
+
+.rehab-cue {
+  position: absolute;
+  left: 50%;
+  top: 22%;
+  transform: translateX(-50%);
+  font-size: calc(var(--u) * 0.95);
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.rehab-cue[data-tone='good'] { color: var(--rh-good); }
+.rehab-cue[data-tone='caution'] { color: var(--rh-caution); }
+
+/* Countdown after the player steps out of the mirror: low in the top zone, clear of the HUD. */
+.rehab-walkaway {
+  position: absolute;
+  left: 50%;
+  top: 28%;
+  z-index: 5;
+  transform: translateX(-50%);
+  max-width: 90%;
+  padding: calc(var(--u) * 0.45) calc(var(--u) * 0.8);
+  border-radius: calc(var(--u) * 0.4);
+  background: rgba(0, 0, 0, 0.82);
+  text-align: center;
+  pointer-events: none;
+}
+
+.rehab-walkaway > p:first-child {
+  margin: 0;
+  font-size: calc(var(--u) * 0.95);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--rh-caution);
+}
+
+/* Flow messages, Ready, countdown and Resume: centred in the top zone. */
+.rehab-centre {
+  position: absolute;
+  inset: 0 0 calc(100% - var(--rh-top-zone)) 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--u) * 0.6);
+  pointer-events: none;
+  text-align: center;
+}
+
+.rehab-centre > .rehab-btn {
+  pointer-events: auto;
+}
+
+.rehab-countdown {
+  font-size: calc(var(--u) * 6);
+  font-weight: 800;
+  color: transparent;
+  -webkit-text-stroke: 3px var(--primary);
+  line-height: 1;
+}
+
+.rehab-judgement {
+  position: absolute;
+  transform: translate(-50%, -150%);
+  font-size: calc(var(--u) * 0.9);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+}
+
+.rehab-judgement[data-tone='good'] { color: var(--rh-good); }
+.rehab-judgement[data-tone='caution'] { color: var(--rh-caution); }
+
+.rehab-silhouette {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  height: 74%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+/* Result: the top zone; scrolls inside it on a short screen. */
+.rehab-result {
+  position: absolute;
+  inset: 0 0 calc(100% - var(--rh-top-zone)) 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: safe center;
+  gap: calc(var(--u) * 0.6);
+  padding: calc(var(--u) * 0.8);
+  overflow-y: auto;
+  text-align: center;
+}
+
+.rehab-result-stars svg {
+  width: calc(var(--u) * 2.2);
+  height: calc(var(--u) * 2.2);
+}
+
+.rehab-result-score {
+  font-size: calc(var(--u) * 2.4);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.rehab-numbers {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: calc(var(--u) * 0.4) calc(var(--u) * 1.2);
+}
+
+.rehab-number-value {
+  font-size: calc(var(--u) * 1.05);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.rehab-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: calc(var(--u) * 0.45);
+  width: min(100%, calc(var(--u) * 16));
+}
+
+/* Gear and alignment: the settings list scrolls inside the top zone. */
+.rehab-gear {
+  position: absolute;
+  inset: 0 0 calc(100% - var(--rh-top-zone)) 0;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 0.2);
+  padding: calc(var(--u) * 0.8) calc(var(--u) * 1);
+  overflow-y: auto;
+}
+
+.rehab-gear-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(var(--u) * 0.5);
+  font-size: calc(var(--u) * 0.8);
+  min-height: calc(var(--u) * 1.6);
+}
+
+.rehab-gear-row > div {
+  display: flex;
+  gap: calc(var(--u) * 0.3);
+  align-items: center;
+}
+
+.rehab-marker {
+  position: absolute;
+  width: calc(var(--u) * 0.5);
+  height: calc(var(--u) * 0.5);
+  margin: calc(var(--u) * -0.25) 0 0 calc(var(--u) * -0.25);
+  border: 2px solid var(--rh-good);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* Hand hover cursor */
+.rehab-cursor {
+  position: absolute;
+  z-index: 50;
+  left: 0;
+  top: 0;
+  width: calc(var(--u) * 1.6);
+  height: calc(var(--u) * 1.6);
+  margin: calc(var(--u) * -0.8) 0 0 calc(var(--u) * -0.8);
+  pointer-events: none;
+  will-change: transform;
+}
+
+/* Mock skeleton panel (development only) */
+.rehab-mock {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--u) * 3);
+  transform: translateX(-50%);
+  width: min(94%, 560px);
+  max-height: 46%;
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 12px;
+  line-height: 1.3;
+  background: transparent;
+  z-index: 40;
+}
+
+.rehab-mock label {
+  display: grid;
+  grid-template-columns: 7.5em 1fr 3em;
+  gap: 6px;
+  align-items: center;
+}
+
+.rehab-mock input[type='range'] {
+  width: 100%;
+  accent-color: var(--primary);
+}
+
+.rehab-mock .row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 4px 0;
+}
+
+.rehab-mock button {
+  font: inherit;
+  color: #fff;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 6px;
+  padding: 2px 8px;
+  cursor: pointer;
+}
+
+.rehab-mock button[aria-pressed='true'] {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.rehab-mock canvas {
+  width: 100%;
+  height: auto;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rehab-rule-card.is-pulsing { animation: none; border-color: var(--rh-caution); }
+  .rehab-btn,
+  .rehab-btn:hover,
+  .rehab-btn[data-hover='true'] { transition: none; transform: none; }
+}
