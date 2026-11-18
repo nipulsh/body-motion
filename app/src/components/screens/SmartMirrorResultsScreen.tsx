@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { MIRROR_GESTURE_TARGET_ATTR } from '@vision/hand/gestureTargets';
 import type { Exercise } from '@vision';
@@ -9,6 +9,7 @@ import { mirrorGestureButtonClass, mirrorGestureListItemClass, mirrorGestureList
 import { MirrorPortraitCard } from '../smartMirror/MirrorPortraitCard';
 import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
+import { DEMO_ANALYSIS, demoSuggestedExercises } from '../analysis/demoAnalysis';
 import { analysisWasPossible, DeformityList } from '../analysis/DeformityList';
 import { FindingNumber, MuscleContribution, MuscleModelNote } from '../analysis/MuscleContribution';
 import { useAnalysisMuscleView } from '../analysis/useAnalysisMuscleView';
@@ -26,15 +27,21 @@ function jumpLabel(view: SuggestedExercisesView): string {
   return 'Suggested exercises';
 }
 
-export function SmartMirrorResultsScreen() {
+/** `demo` shows the bundled sample analysis and plan instead of the patient's own result. */
+export function SmartMirrorResultsScreen({ demo = false }: { demo?: boolean }) {
   const { state, dispatch } = useWorkflow();
-  const analysis = state.analysis;
+  const analysis = demo ? DEMO_ANALYSIS : state.analysis;
 
   const muscleView = useAnalysisMuscleView(analysis, state.selectedMuscleIndex);
   const selectMuscle = (index: number | null) => dispatch({ type: 'SET_SELECTED_MUSCLE', index });
 
-  const canSuggest = analysis != null && analysisWasPossible(analysis);
-  const suggestions = useSuggestedExercises(canSuggest ? (state.jobId ?? null) : null);
+  const canSuggest = !demo && analysis != null && analysisWasPossible(analysis);
+  const jobSuggestions = useSuggestedExercises(canSuggest ? (state.jobId ?? null) : null);
+  const demoPlan = useMemo<SuggestedExercisesView | null>(
+    () => (demo ? { status: 'ready', exercises: demoSuggestedExercises() } : null),
+    [demo],
+  );
+  const suggestions = demoPlan ? { view: demoPlan, retry: jobSuggestions.retry } : jobSuggestions;
   const hasSuggestions = suggestions.view.status !== 'idle';
   const scrollRef = useRef<HTMLDivElement>(null);
   const exercisesRef = useRef<HTMLElement>(null);
@@ -66,7 +73,7 @@ export function SmartMirrorResultsScreen() {
 
   const startSuggested = (exercises: Exercise[], index: number) => {
     dispatch({ type: 'SET_EXERCISES', exercises });
-    dispatch({ type: 'SET_EXERCISE_RETURN_STAGE', stage: 'mirror_results' });
+    dispatch({ type: 'SET_EXERCISE_RETURN_STAGE', stage: demo ? 'mirror_demo_results' : 'mirror_results' });
     dispatch({ type: 'SET_EXERCISE_INDEX', index });
     dispatch({ type: 'SET_STAGE', stage: 'mirror_exercise_session' });
   };
@@ -114,7 +121,9 @@ export function SmartMirrorResultsScreen() {
               data-testid="mirror-results-analysis"
             >
               <header className="shrink-0">
-                <h1 className="text-lg font-semibold text-white">Results</h1>
+                <h1 className="text-lg font-semibold text-white" data-testid="mirror-results-title">
+                  {demo ? 'Sample results' : 'Results'}
+                </h1>
                 <p className="mt-1 text-sm leading-relaxed text-neutral-200">{analysis.summary}</p>
                 <p className="mt-1 text-xs text-neutral-400">
                   {analysis.bodyRegion} · {analysis.observedDeformation}

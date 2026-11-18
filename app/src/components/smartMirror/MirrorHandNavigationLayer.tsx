@@ -22,7 +22,11 @@ interface MirrorHandStatus {
 const MirrorHandStatusContext = createContext<MirrorHandStatus | null>(null);
 
 /** The analysis capture and results pages keep their own layout; every other page holds its text in the top 40%. */
-const BOTTOM_HINT_STAGES: ReadonlySet<WorkflowStage> = new Set<WorkflowStage>(['mirror_analysis', 'mirror_results']);
+const BOTTOM_HINT_STAGES: ReadonlySet<WorkflowStage> = new Set<WorkflowStage>([
+  'mirror_analysis',
+  'mirror_results',
+  'mirror_demo_results',
+]);
 
 /**
  * Hand-control hints and errors. Render it inside the rotated kiosk stage so the text

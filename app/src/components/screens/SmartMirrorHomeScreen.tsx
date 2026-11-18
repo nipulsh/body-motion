@@ -42,6 +42,12 @@ export function SmartMirrorHomeScreen() {
     }
   };
 
+  /** The bundled sample result: needs no camera, server or network. */
+  const openDemoAnalysis = () => {
+    dispatch({ type: 'SET_SELECTED_MUSCLE', index: 0 });
+    dispatch({ type: 'SET_STAGE', stage: 'mirror_demo_results' });
+  };
+
   const startExercise = () => {
     const exercises = EXERCISE_LIBRARY.map(normalizeExercise);
     dispatch({ type: 'SET_EXERCISES', exercises });
@@ -85,6 +91,17 @@ export function SmartMirrorHomeScreen() {
             Review analysis
           </Button>
         ) : null}
+
+        <Button
+          type="button"
+          variant="outline"
+          data-testid="mirror-home-demo"
+          {...{ [MIRROR_GESTURE_TARGET_ATTR]: 'true' }}
+          className={cn(mirrorGestureMenuButtonClass)}
+          onClick={openDemoAnalysis}
+        >
+          Demo analysis
+        </Button>
 
         <Button
           type="button"

@@ -9,6 +9,8 @@ export type WorkflowStage =
   | 'mirror_uploading'
   | 'mirror_processing'
   | 'mirror_results'
+  /** The bundled sample analysis (`DEMO_ANALYSIS`); leaves the patient's own result alone. */
+  | 'mirror_demo_results'
   | 'mirror_exercise_plan'
   | 'mirror_exercise_session'
   | 'games_placeholder'

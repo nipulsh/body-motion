@@ -38,6 +38,8 @@ function StageRouter() {
       return <SmartMirrorProcessingScreen />;
     case 'mirror_results':
       return <SmartMirrorResultsScreen />;
+    case 'mirror_demo_results':
+      return <SmartMirrorResultsScreen demo />;
     case 'mirror_exercise_plan':
       return <SmartMirrorExercisePlanScreen />;
     case 'mirror_exercise_session':

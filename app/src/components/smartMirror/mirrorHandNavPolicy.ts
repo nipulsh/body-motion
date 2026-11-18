@@ -6,6 +6,7 @@ const MIRROR_KIOSK_STAGES: ReadonlySet<WorkflowStage> = new Set([
   'mirror_uploading',
   'mirror_processing',
   'mirror_results',
+  'mirror_demo_results',
   'mirror_exercise_plan',
   'mirror_exercise_session',
   'games_placeholder',

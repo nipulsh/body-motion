@@ -79,8 +79,11 @@ function choiceKind(choice: ViewChoice): RangeModel['kind'] {
 export function ExerciseScreen({ variant = 'clinical' }: { variant?: 'clinical' | 'mirror' }) {
   const isMirror = variant === 'mirror';
   const { state, dispatch } = useWorkflow();
-  // Mirror sessions go back where they started (home, or the results page's suggested exercises).
-  const mirrorExitStage = state.exerciseReturnStage === 'mirror_results' ? 'mirror_results' : 'mirror_home';
+  // Mirror sessions go back where they started (home, or a results page's suggested exercises).
+  const mirrorExitStage =
+    state.exerciseReturnStage === 'mirror_results' || state.exerciseReturnStage === 'mirror_demo_results'
+      ? state.exerciseReturnStage
+      : 'mirror_home';
   const exercises = state.exercises ?? [];
   const exerciseRaw = exercises[state.exerciseIndex] ?? null;
   const baseExercise = useMemo(
